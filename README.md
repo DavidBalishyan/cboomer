@@ -63,18 +63,23 @@ $ make dev live mitshm select
 | `r` | Reload configuration file |
 | `m` | Mirror the image horizontally |
 | `f` | Toggle flashlight effect |
+| `t` | Cycle shader: Normal, Invert, CRT, Grayscale, Edge |
 | `Ctrl` + scroll / `+` / `-` | Adjust flashlight radius (when flashlight is on) |
 | `Ctrl` + `r` | Reload shaders from disk (developer build only) |
 
 ## Command-Line Options
 
 ```
-Usage: cboomer [OPTIONS]
+cboomer  -  fullscreen screenshot viewer
+
+Usage:  cboomer [OPTIONS]
+
+Options:
   -d, --delay <seconds>    delay execution by <seconds>
   -h, --help               show this help and exit
       --new-config [path]  generate a default config at [path]
   -c, --config <path>      use config at <path>
-  -V, --version            show the current version and exit
+  -V, --version            show version and exit
   -w, --windowed           windowed mode instead of fullscreen
 ```
 
@@ -105,14 +110,37 @@ scale_friction = 4.00
 ## How It Works
 
 1. **Screenshot capture**: Uses `XGetImage` (or `XShmGetImage` with MIT-SHM) to grab the current screen contents into an `XImage`.
-2. **OpenGL rendering**: The screenshot is uploaded as a `GL_TEXTURE_2D` and rendered onto a fullscreen quad. The vertex shader transforms coordinates based on camera position/scale, and the fragment shader applies the flashlight effect.
+2. **OpenGL rendering**: The screenshot is uploaded as a `GL_TEXTURE_2D` and rendered onto a fullscreen quad. The vertex shader transforms coordinates based on camera position/scale, and the fragment shader applies effects. Shader modes (Normal, Invert, CRT, Grayscale, Edge) can be cycled with `t`. Each fragment shader preserves the flashlight and mirror features.
 3. **Event loop**: Listens for X11 events (mouse, keyboard, close) to update camera state, flashlight, and mirror mode. Camera velocity decays over time for smooth inertia.
 4. **Live mode** (`make live`): Refreshes the screenshot each frame, re-uploading the texture and updating the vertex buffer if the tracked window resizes.
+
+## Shaders
+
+All shaders live in `src/shaders/` as GLSL 1.30 source files. At build time the Makefile converts them into C string constants embedded in the binary via `build/shaders.h`, so no external shader files are needed at runtime.
+
+### Vertex shader (`vert.glsl`)
+
+Transforms vertex positions to implement camera pan and zoom. It converts screenshot coordinates into normalized device coordinates, applying `cameraPos`, `cameraScale`, and `windowSize` / `screenshotSize` ratio corrections to handle non-square aspect ratios.
+
+### Fragment shaders
+
+All fragment shaders share the same uniforms (`tex`, `cursorPos`, `windowSize`, `flShadow`, `flRadius`, `cameraScale`, `mirror`) and implement the flashlight and mirror features consistently:
+
+* **Normal** (`frag.glsl`): Samples the texture directly. The flashlight darkens pixels outside a cursor-centered circle using `mix()` between the texel color and black, controlled by `flShadow` and `flRadius`. Mirror flips the x-axis of the texture coordinate.
+* **Invert** (`frag_invert.glsl`): Same as Normal, but subtracts each color channel from 1.0 to produce a photographic negative.
+* **CRT** (`frag_crt.glsl`): Adds a retro monitor look with three effects: chromatic aberration (shifts red and blue channels radially near edges), scanlines (a sine wave subtracted from the brightness at each row), and vignette (darkens corners using quadratic falloff from center).
+* **Grayscale** (`frag_grayscale.glsl`): Converts to grayscale using luminance weights `dot(texel.rgb, vec3(0.299, 0.587, 0.114))`, then applies the flashlight on top.
+* **Edge** (`frag_edge.glsl`): Runs a Sobel operator over the grayscale image using 9 texture lookups. It computes horizontal and vertical gradients (`gx`, `gy`) and outputs `sqrt(gx*gx + gy*gy)` as the edge intensity. Uses `textureSize()` to determine texel offsets instead of a uniform.
+
+### Developer hot-reload
+
+When built with `make dev`, pressing Ctrl+r at runtime re-reads all `.glsl` files from disk, recompiles both the vertex and all five fragment shaders, and re-links every program. This allows live iteration on shader code without restarting the viewer.
 
 ## Credits
 
 - Original [Nim implementation](https://github.com/tsoding/boomer) by [Tsoding](https://twitch.tv/tsoding)
 - X11/GLX reference: [Programming OpenGL in Linux](https://www.khronos.org/opengl/wiki/Programming_OpenGL_in_Linux:_GLX_and_Xlib)
+- [Edge Detection Shaders](https://www.flyriver.com/g/edge-detection-shaders?auth=1781341835102)
 
 ## License
 

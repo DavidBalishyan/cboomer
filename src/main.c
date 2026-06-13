@@ -34,9 +34,43 @@ typedef struct {
     const char *content;
 } Shader;
 
+#define SHADER_COUNT 5
+
+typedef enum {
+    SHADER_NORMAL,
+    SHADER_INVERT,
+    SHADER_CRT,
+    SHADER_GRAYSCALE,
+    SHADER_EDGE,
+} ShaderMode;
+
+static const char *shader_names[SHADER_COUNT] = {
+    "Normal",
+    "Invert",
+    "CRT",
+    "Grayscale",
+    "Edge",
+};
+
+static Shader vertex_shader = { .path = "(embedded)", .content = VERT_SRC };
+static Shader fragment_shaders[SHADER_COUNT] = {
+    { .path = "(embedded)", .content = FRAG_SRC },
+    { .path = "(embedded)", .content = FRAG_INVERT_SRC },
+    { .path = "(embedded)", .content = FRAG_CRT_SRC },
+    { .path = "(embedded)", .content = FRAG_GRAYSCALE_SRC },
+    { .path = "(embedded)", .content = FRAG_EDGE_SRC },
+};
+static GLuint programs[SHADER_COUNT];
+static ShaderMode current_shader = SHADER_NORMAL;
+
 #ifdef DEVELOPER
-static Shader vertex_shader;
-static Shader fragment_shader;
+static const char *fragment_paths[SHADER_COUNT] = {
+    "src/shaders/frag.glsl",
+    "src/shaders/frag_invert.glsl",
+    "src/shaders/frag_crt.glsl",
+    "src/shaders/frag_grayscale.glsl",
+    "src/shaders/frag_edge.glsl",
+};
 
 static void reload_shader(Shader *shader) {
     FILE *f = fopen(shader->path, "rb");
@@ -192,13 +226,49 @@ static int x_error_handler(Display *display, XErrorEvent *error) {
 }
 
 static void usage(void) {
-    fprintf(stderr, "Usage: cboomer [OPTIONS]\n");
-    fprintf(stderr, "  -d, --delay <seconds: float>  delay execution of the program by provided <seconds>\n");
-    fprintf(stderr, "  -h, --help                    show this help and exit\n");
-    fprintf(stderr, "      --new-config [filepath]   generate a new default config at [filepath]\n");
-    fprintf(stderr, "  -c, --config <filepath>       use config at <filepath>\n");
-    fprintf(stderr, "  -V, --version                 show the current version and exit\n");
-    fprintf(stderr, "  -w, --windowed                windowed mode instead of fullscreen\n");
+    fprintf(stderr, "cboomer  -  fullscreen screenshot viewer\n\n");
+
+    fprintf(stderr, "Usage:  cboomer [OPTIONS]\n\n");
+
+    fprintf(stderr, "Options:\n");
+    fprintf(stderr, "  -d, --delay <seconds>    delay execution by <seconds>\n");
+    fprintf(stderr, "  -h, --help               show this help and exit\n");
+    fprintf(stderr, "      --new-config [path]  generate a default config at [path]\n");
+    fprintf(stderr, "  -c, --config <path>      use config at <path>\n");
+    fprintf(stderr, "  -V, --version            show version and exit\n");
+    fprintf(stderr, "  -w, --windowed           windowed mode instead of fullscreen\n");
+
+    fprintf(stderr, "\nControls:\n");
+    fprintf(stderr, "  Mouse\n");
+    fprintf(stderr, "    drag                   pan the image\n");
+    fprintf(stderr, "    scroll                 zoom in / out\n");
+    fprintf(stderr, "  Keys\n");
+    fprintf(stderr, "    q / Esc                quit\n");
+    fprintf(stderr, "    0                      reset position, scale, mirror\n");
+    fprintf(stderr, "    = / -                  zoom in / out\n");
+    fprintf(stderr, "    m                      mirror image horizontally\n");
+    fprintf(stderr, "    f                      toggle flashlight\n");
+    fprintf(stderr, "    t                      cycle shader modes\n");
+    fprintf(stderr, "    r                      reload config\n");
+#ifdef DEVELOPER
+    fprintf(stderr, "    Ctrl+r                 reload shaders from disk\n");
+#endif
+    fprintf(stderr, "    Ctrl+scroll/+/-        adjust flashlight radius\n");
+
+#ifdef DEVELOPER
+    fprintf(stderr, "\nBuild features:\n");
+    fprintf(stderr, "  DEVELOPER               Ctrl+r hot-reloads shaders\n");
+#endif
+#ifdef LIVE
+    fprintf(stderr, "  LIVE                    screenshot refreshes every frame\n");
+#endif
+#ifdef MITSHM
+    fprintf(stderr, "  MITSHM                  MIT-SHM for faster captures\n");
+#endif
+#ifdef SELECT
+    fprintf(stderr, "  SELECT                  click to select target window\n");
+#endif
+    fprintf(stderr, "\n");
 }
 
 int main(int argc, char **argv) {
@@ -395,15 +465,14 @@ int main(int argc, char **argv) {
     glXMakeCurrent(display, win, glc);
 
 #ifdef DEVELOPER
-    vertex_shader.path = "src/vert.glsl";
-    vertex_shader.content = VERT_SRC;
-    fragment_shader.path = "src/frag.glsl";
-    fragment_shader.content = FRAG_SRC;
-#else
-    Shader vertex_shader = { .path = "(embedded)", .content = VERT_SRC };
-    Shader fragment_shader = { .path = "(embedded)", .content = FRAG_SRC };
+    vertex_shader.path = "src/shaders/vert.glsl";
+    for (int i = 0; i < SHADER_COUNT; i++) {
+        fragment_shaders[i].path = fragment_paths[i];
+    }
 #endif
-    GLuint shader_program = new_shader_program(vertex_shader, fragment_shader);
+    for (int i = 0; i < SHADER_COUNT; i++) {
+        programs[i] = new_shader_program(vertex_shader, fragment_shaders[i]);
+    }
 
     Screenshot screenshot = new_screenshot(display, tracking_window);
 
@@ -449,7 +518,7 @@ int main(int argc, char **argv) {
                  0, GL_BGRA, GL_UNSIGNED_BYTE, screenshot.image->data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    glUniform1i(glGetUniformLocation(shader_program, "tex"), 0);
+    glUniform1i(glGetUniformLocation(programs[current_shader], "tex"), 0);
 
     glEnable(GL_TEXTURE_2D);
 
@@ -543,11 +612,15 @@ int main(int argc, char **argv) {
                             printf("------------------------------\n");
                             printf("RELOADING SHADERS\n");
                             reload_shader(&vertex_shader);
-                            reload_shader(&fragment_shader);
-                            GLuint new_program = new_shader_program(vertex_shader, fragment_shader);
-                            glDeleteProgram(shader_program);
-                            shader_program = new_program;
-                            printf("Shader program ID: %u\n", shader_program);
+                            for (int i = 0; i < SHADER_COUNT; i++) {
+                                reload_shader(&fragment_shaders[i]);
+                            }
+                            for (int i = 0; i < SHADER_COUNT; i++) {
+                                GLuint new_program = new_shader_program(vertex_shader, fragment_shaders[i]);
+                                glDeleteProgram(programs[i]);
+                                programs[i] = new_program;
+                            }
+                            printf("Shader programs reloaded\n");
                             printf("------------------------------\n");
                         }
 #endif
@@ -556,6 +629,9 @@ int main(int argc, char **argv) {
                         mirror = !mirror;
                     } else if (key == XK_f) {
                         flashlight.is_enabled = !flashlight.is_enabled;
+                    } else if (key == XK_t) {
+                        current_shader = (current_shader + 1) % SHADER_COUNT;
+                        printf("Shader: %s\n", shader_names[current_shader]);
                     }
                     break;
                 }
@@ -594,7 +670,7 @@ int main(int argc, char **argv) {
                       vec2((float)wa.width, (float)wa.height));
         flashlight_update(&flashlight, dt);
 
-        draw(screenshot.image, camera, shader_program, vao, texture,
+        draw(screenshot.image, camera, programs[current_shader], vao, texture,
              vec2((float)wa.width, (float)wa.height),
              mouse, flashlight, mirror);
 
@@ -627,7 +703,9 @@ int main(int argc, char **argv) {
     glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(1, &vbo);
     glDeleteBuffers(1, &ebo);
-    glDeleteProgram(shader_program);
+    for (int i = 0; i < SHADER_COUNT; i++) {
+        glDeleteProgram(programs[i]);
+    }
     destroy_screenshot(screenshot, display);
     glXDestroyContext(display, glc);
     XDestroyWindow(display, win);
