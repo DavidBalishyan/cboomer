@@ -1,4 +1,4 @@
-# Boomer
+# cboomer
 
 Zoomer application for Linux - a fullscreen screenshot viewer with pan, zoom, flashlight effects, and live window tracking.
 
