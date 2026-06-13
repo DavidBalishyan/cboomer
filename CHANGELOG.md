@@ -20,3 +20,4 @@ What's new
 - **README overhaul** - added demo video link, full shader documentation explaining every effect, and improved build variant table.
 - **Build the binary to CWD** - *cboomer* now lands in the project root instead of *build/*.
 
+Commit: [084b84f](https://github.com/DavidBalishyan/cboomer/commit/084b84fc45f76d57353ad1b7cdf954b035bdc18a)
