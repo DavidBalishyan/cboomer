@@ -6,14 +6,14 @@ PREFIX ?= /usr/local
 BUILD = build
 SRC = src/main.c src/la.c src/config.c src/navigation.c src/screenshot.c
 OBJ = $(SRC:src/%.c=$(BUILD)/%.o)
-BIN = $(BUILD)/cboomer
+BIN = $(shell pwd)/cboomer
 
 GIT_HASH := $(shell git rev-parse HEAD 2>/dev/null || echo unknown)
 CFLAGS += -DGIT_HASH=\"$(GIT_HASH)\" -I$(BUILD)
 
 .PHONY: all clean dev live mitshm select install uninstall reinstall help
 
-all: cboomer
+all: $(BIN)
 
 FRAG_SHADER_NAMES = frag_invert frag_crt frag_grayscale frag_edge
 
@@ -46,9 +46,6 @@ $(BUILD)/%.o: src/%.c | $(BUILD)
 
 $(BIN): $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
-
-cboomer: $(BIN)
-	cp $(BIN) $@
 
 dev: CFLAGS += -DDEVELOPER
 dev: clean cboomer
