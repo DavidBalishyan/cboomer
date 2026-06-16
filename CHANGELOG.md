@@ -37,6 +37,7 @@ Commit: [084b84f](https://github.com/DavidBalishyan/cboomer/commit/084b84fc45f76
 - **Animated shaders** - new `time` uniform passed to all fragment shaders enables real-time animation (VHS glitch, Distortion).
 - **Shader cycling** wraps through all 12 modes with *t* key.
 
+commit: [2deaacc](https://github.com/DavidBalishyan/cboomer/commit/2deaaccf86d6a9f12dfeff340247bc1fe28bf424)
 # v1.2.1
 >[!NOTE] This is a PATCH(bug fix) version
 ## Fixes
@@ -54,3 +55,5 @@ Commit: [084b84f](https://github.com/DavidBalishyan/cboomer/commit/084b84fc45f76
 - **Fixed uninitialized shader source on partial `fread`** - `reload_shader` didn't check how many bytes were actually read (`src/main.c:111`).
 - **Fixed memory leak on exit in DEVELOPER mode** - reloaded shader heap buffers were never freed (`src/main.c:743`).
 - **Fixed undetected `snprintf` truncation** - config path construction silently used truncated paths (`src/main.c:308,311,350,388`).
+
+commit: [2deaacc](https://github.com/DavidBalishyan/cboomer/commit/2deaaccf86d6a9f12dfeff340247bc1fe28bf424)
