@@ -1,4 +1,5 @@
->[!NOTE] Not all of these things will be implemented in the future, but planning on the wayland port
+>[!NOTE]
+>Not all of these things will be implemented in the future, but planning on the wayland port
 # TODO
 
 ## Done (v1.2.1)

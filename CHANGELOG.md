@@ -39,7 +39,8 @@ Commit: [084b84f](https://github.com/DavidBalishyan/cboomer/commit/084b84fc45f76
 
 commit: [2deaacc](https://github.com/DavidBalishyan/cboomer/commit/2deaaccf86d6a9f12dfeff340247bc1fe28bf424)
 # v1.2.1
->[!NOTE] This is a PATCH(bug fix) version
+>[!NOTE]
+>This is a PATCH(bug fix version)
 ## Fixes
 - **Fixed crash on shader hot-reload** (Ctrl+R in `DEVELOPER` mode) - `free()` called on embedded string constants in `src/main.c:103`.
 - **Fixed corrupted rendering in LIVE builds** - vertex array had 5 floats per vertex but stride was set to 4 floats, causing GPU to read misaligned data (`src/main.c:722`).
