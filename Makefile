@@ -15,7 +15,7 @@ CFLAGS += -DGIT_HASH=\"$(GIT_HASH)\" -I$(BUILD)
 
 all: $(BIN)
 
-FRAG_SHADER_NAMES = frag_invert frag_crt frag_grayscale frag_edge
+FRAG_SHADER_NAMES = frag_invert frag_crt frag_grayscale frag_edge frag_vhsglitch frag_distortion frag_zoomblur frag_posterize frag_pixelate frag_sepia frag_emboss
 
 $(BUILD)/shaders.h: src/shaders/vert.glsl src/shaders/frag.glsl \
                     $(FRAG_SHADER_NAMES:%=src/shaders/%.glsl) | $(BUILD)
@@ -48,18 +48,18 @@ $(BIN): $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 dev: CFLAGS += -DDEVELOPER
-dev: clean cboomer
+dev: clean $(BIN)
 
 live: CFLAGS += -DLIVE
-live: clean cboomer
+live: clean $(BIN)
 
 mitshm: CFLAGS += -DMITSHM
-mitshm: clean cboomer
+mitshm: clean $(BIN)
 
 select: CFLAGS += -DSELECT
-select: clean cboomer
+select: clean $(BIN)
 
-install: cboomer
+install: $(BIN)
 	install -d $(DESTDIR)$(PREFIX)/bin
 	install -m 755 cboomer $(DESTDIR)$(PREFIX)/bin/cboomer
 

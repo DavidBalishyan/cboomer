@@ -43,6 +43,7 @@ Config load_config(const char *file_path) {
 
         if (strcmp(key, "min_scale") == 0) {
             config.min_scale = atof(value);
+            if (config.min_scale < 0.001) config.min_scale = 0.001;
         } else if (strcmp(key, "scroll_speed") == 0) {
             config.scroll_speed = atof(value);
         } else if (strcmp(key, "drag_friction") == 0) {
@@ -50,8 +51,7 @@ Config load_config(const char *file_path) {
         } else if (strcmp(key, "scale_friction") == 0) {
             config.scale_friction = atof(value);
         } else {
-            fprintf(stderr, "Unknown config key `%s`\n", key);
-            exit(1);
+            fprintf(stderr, "Warning: unknown config key `%s`\n", key);
         }
     }
 

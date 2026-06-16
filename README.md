@@ -65,7 +65,7 @@ $ make dev live mitshm select
 | `r` | Reload configuration file |
 | `m` | Mirror the image horizontally |
 | `f` | Toggle flashlight effect |
-| `t` | Cycle shader: Normal, Invert, CRT, Grayscale, Edge |
+| `t` | Cycle shader: Normal, Invert, CRT, Grayscale, Edge, VHS Glitch, Distortion, Zoom Blur, Posterize, Pixelate, Sepia, Emboss |
 | `Ctrl` + scroll / `+` / `-` | Adjust flashlight radius (when flashlight is on) |
 | `Ctrl` + `r` | Reload shaders from disk (developer build only) |
 
@@ -112,13 +112,15 @@ scale_friction = 4.00
 ## How It Works
 
 1. **Screenshot capture**: Uses `XGetImage` (or `XShmGetImage` with MIT-SHM) to grab the current screen contents into an `XImage`.
-2. **OpenGL rendering**: The screenshot is uploaded as a `GL_TEXTURE_2D` and rendered onto a fullscreen quad. The vertex shader transforms coordinates based on camera position/scale, and the fragment shader applies effects. Shader modes (Normal, Invert, CRT, Grayscale, Edge) can be cycled with `t`. Each fragment shader preserves the flashlight and mirror features.
+2. **OpenGL rendering**: The screenshot is uploaded as a `GL_TEXTURE_2D` and rendered onto a fullscreen quad. The vertex shader transforms coordinates based on camera position/scale, and the fragment shader applies effects. 12 shader modes can be cycled with `t`. Each fragment shader preserves the flashlight and mirror features.
 3. **Event loop**: Listens for X11 events (mouse, keyboard, close) to update camera state, flashlight, and mirror mode. Camera velocity decays over time for smooth inertia.
 4. **Live mode** (`make live`): Refreshes the screenshot each frame, re-uploading the texture and updating the vertex buffer if the tracked window resizes.
 
 ## Shaders
 
 All shaders live in `src/shaders/` as GLSL 1.30 source files. At build time the Makefile converts them into C string constants embedded in the binary via `build/shaders.h`, so no external shader files are needed at runtime.
+
+Shaders that use animation receive a `time` uniform (elapsed seconds since launch). Non-animated shaders silently ignore it (OpenGL ignores `glUniform` for non-existent locations).
 
 ### Vertex shader (`vert.glsl`)
 
@@ -133,16 +135,24 @@ All fragment shaders share the same uniforms (`tex`, `cursorPos`, `windowSize`, 
 * **CRT** (`frag_crt.glsl`): Adds a retro monitor look with three effects: chromatic aberration (shifts red and blue channels radially near edges), scanlines (a sine wave subtracted from the brightness at each row), and vignette (darkens corners using quadratic falloff from center).
 * **Grayscale** (`frag_grayscale.glsl`): Converts to grayscale using luminance weights `dot(texel.rgb, vec3(0.299, 0.587, 0.114))`, then applies the flashlight on top.
 * **Edge** (`frag_edge.glsl`): Runs a Sobel operator over the grayscale image using 9 texture lookups. It computes horizontal and vertical gradients (`gx`, `gy`) and outputs `sqrt(gx*gx + gy*gy)` as the edge intensity. Uses `textureSize()` to determine texel offsets instead of a uniform.
+* **VHS Glitch** (`frag_vhsglitch.glsl`): Animated retro VCR corruption. Random horizontal block shifts (using a screen-space hash function) displace entire row sections. Red and blue channels are offset independently for chromatic separation. Occasional noise bars and white dropout lines flicker in and out. All timing driven by the `time` uniform.
+* **Distortion** (`frag_distortion.glsl`): Combines an animated sine-wave ripple (60 waves radiating from center, oscillating at 4 rad/s) with a subtle barrel distortion (quadratic warp toward edges). The two effects are blended at 30/70 ratio.
+* **Zoom Blur** (`frag_zoomblur.glsl`): Radial motion blur originating from the cursor position. For each fragment it takes 24 samples along the direction from the cursor to the pixel, spaced with quadratic falloff, and averages them. Blur intensity increases with distance from the cursor.
+* **Posterize** (`frag_posterize.glsl`): Reduces each color channel to 4 discrete levels (`floor(texel * 4) / 4`), creating a flat graphic-art/comic-book look.
+* **Pixelate** (`frag_pixelate.glsl`): Divides the texture into a coarse grid (cell size 0.02 in UV space, ~50 cells across) and samples once at the center of each cell. Simple `floor` + offset on UV coordinates.
+* **Sepia** (`frag_sepia.glsl`): Applies the classic darkroom sepia tone using weighted dot products: `R = dot(rgb, (0.393, 0.769, 0.189))`, `G = dot(rgb, (0.349, 0.686, 0.168))`, `B = dot(rgb, (0.272, 0.534, 0.131))`.
+* **Emboss** (`frag_emboss.glsl`): A simplified emboss kernel comparing the grayscale luminance of the top-left and bottom-right corners of a 3x3 neighborhood. The difference `grayBR - grayTL + 0.5` produces a 3D relief effect with a neutral gray background.
 
 ### Developer hot-reload
 
-When built with `make dev`, pressing Ctrl+r at runtime re-reads all `.glsl` files from disk, recompiles both the vertex and all five fragment shaders, and re-links every program. This allows live iteration on shader code without restarting the viewer.
+When built with `make dev`, pressing Ctrl+r at runtime re-reads all `.glsl` files from disk, recompiles both the vertex and all fragment shaders, and re-links every program. This allows live iteration on shader code without restarting the viewer.
 
 ## Credits
 
 - Original [Nim implementation](https://github.com/tsoding/boomer) by [Tsoding](https://twitch.tv/tsoding)
 - X11/GLX reference: [Programming OpenGL in Linux](https://www.khronos.org/opengl/wiki/Programming_OpenGL_in_Linux:_GLX_and_Xlib)
 - [Edge Detection Shaders](https://www.flyriver.com/g/edge-detection-shaders?auth=1781341835102)
+- [OpenGL documentation](https://docs.gl)
 
 ## License
 

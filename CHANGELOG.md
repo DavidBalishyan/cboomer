@@ -1,3 +1,10 @@
+# [Semantic versioning](https://semver.org/)
+Given a version number MAJOR.MINOR.PATCH, increment the:
+
+- MAJOR version when you make incompatible API changes
+- MINOR version when you add functionality in a backward compatible manner
+- PATCH version when you make backward compatible bug fixes
+Additional labels for pre-release and build metadata are available as extensions to the MAJOR.MINOR.PATCH format.
 # v1.0.0
 
 Zoomer application for Linux with *pan, zoom, flashlight, mirror, and live window tracking*. **C11** rewrite using **X11** and **OpenGL**.
@@ -14,10 +21,36 @@ Commit: [822a079](https://github.com/DavidBalishyan/cboomer/commit/822a0795fc8e2
 
 # v1.1.0
 
-What's new
+## What's new
 - **Shader effects!** Press *t* to cycle through 5 modes: Normal, Invert (photographic negative), CRT (chromatic aberration + scanlines + vignette), Grayscale, and Edge (Sobel operator).
 - **Shaders moved to src/shaders** - all *.glsl* files live in their own directory, embedded as C strings at build time. 
 - **README overhaul** - added demo video link, full shader documentation explaining every effect, and improved build variant table.
 - **Build the binary to CWD** - *cboomer* now lands in the project root instead of *build/*.
 
+
 Commit: [084b84f](https://github.com/DavidBalishyan/cboomer/commit/084b84fc45f76d57353ad1b7cdf954b035bdc18a)
+
+# v1.2.0
+
+## What's new
+- **7 new shaders!** 12 total now. Added VHS Glitch (animated block shift + channel offset + noise), Distortion (ripple + barrel warp), Zoom Blur (radial blur from cursor), Posterize (4-level color quantization), Pixelate (low-res grid), Sepia (vintage photo tone), and Emboss (3D relief).
+- **Animated shaders** - new `time` uniform passed to all fragment shaders enables real-time animation (VHS glitch, Distortion).
+- **Shader cycling** wraps through all 12 modes with *t* key.
+
+# v1.2.1
+>[!NOTE] This is a PATCH(bug fix) version
+## Fixes
+- **Fixed crash on shader hot-reload** (Ctrl+R in `DEVELOPER` mode) - `free()` called on embedded string constants in `src/main.c:103`.
+- **Fixed corrupted rendering in LIVE builds** - vertex array had 5 floats per vertex but stride was set to 4 floats, causing GPU to read misaligned data (`src/main.c:722`).
+- **Fixed heap buffer overflow in `reload_shader`** - unhandled `ftell` failure returned `-1`, which when cast to `size_t` produced `SIZE_MAX`, leading to a near-zero `malloc` followed by a massive `fread` (`src/main.c:107`).
+- **Fixed MIT-SHM fallback on alloc failure** - `XShmCreateImage`, `shmget`, `shmat`, and `XShmAttach` were all unchecked; any failure caused a segfault or use of invalid shared memory (`src/screenshot.c:16-35`).
+- **Fixed `XVisualInfo` leak** - `glXChooseVisual` result (`vi`) was never freed with `XFree` (`src/main.c:455`).
+- **Fixed division by zero from config** - `min_scale` was accepted as 0 or negative, leading to `vec2_div_f` dividing by zero in navigation (`src/config.c:45`, `src/navigation.c:12-14`).
+- **Fixed dangling pointer on screenshot refresh failure** - `XGetSubImage` partial corruption + `XGetImage` failure left `screenshot->image` in an undefined state (`src/screenshot.c:75-98`).
+- **Fixed config parser abort** - unknown config keys called `exit(1)` instead of issuing a warning (`src/config.c:53`).
+- **Fixed sleep not retried on signal** - `nanosleep` returned early on `EINTR` without retrying (`src/main.c:400`).
+- **Fixed unchecked `XGetWindowAttributes`** - root window and event loop window attribute fetches could silently return garbage (`src/main.c:464,584`).
+- **Fixed unchecked `XGrabPointer`/`XGrabKeyboard`** - grab failures in `SELECT` mode were ignored, allowing the event loop to hang (`src/main.c:221-227`).
+- **Fixed uninitialized shader source on partial `fread`** - `reload_shader` didn't check how many bytes were actually read (`src/main.c:111`).
+- **Fixed memory leak on exit in DEVELOPER mode** - reloaded shader heap buffers were never freed (`src/main.c:743`).
+- **Fixed undetected `snprintf` truncation** - config path construction silently used truncated paths (`src/main.c:308,311,350,388`).

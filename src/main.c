@@ -8,6 +8,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <time.h>
+#include <errno.h>
 #include <sys/stat.h>
 
 #include <X11/Xlib.h>
@@ -34,7 +35,7 @@ typedef struct {
     const char *content;
 } Shader;
 
-#define SHADER_COUNT 5
+#define SHADER_COUNT 12
 
 typedef enum {
     SHADER_NORMAL,
@@ -42,6 +43,13 @@ typedef enum {
     SHADER_CRT,
     SHADER_GRAYSCALE,
     SHADER_EDGE,
+    SHADER_VHSGLITCH,
+    SHADER_DISTORTION,
+    SHADER_ZOOMBLUR,
+    SHADER_POSTERIZE,
+    SHADER_PIXELATE,
+    SHADER_SEPIA,
+    SHADER_EMBOSS,
 } ShaderMode;
 
 static const char *shader_names[SHADER_COUNT] = {
@@ -50,6 +58,13 @@ static const char *shader_names[SHADER_COUNT] = {
     "CRT",
     "Grayscale",
     "Edge",
+    "VHS Glitch",
+    "Distortion",
+    "Zoom Blur",
+    "Posterize",
+    "Pixelate",
+    "Sepia",
+    "Emboss",
 };
 
 static Shader vertex_shader = { .path = "(embedded)", .content = VERT_SRC };
@@ -59,6 +74,13 @@ static Shader fragment_shaders[SHADER_COUNT] = {
     { .path = "(embedded)", .content = FRAG_CRT_SRC },
     { .path = "(embedded)", .content = FRAG_GRAYSCALE_SRC },
     { .path = "(embedded)", .content = FRAG_EDGE_SRC },
+    { .path = "(embedded)", .content = FRAG_VHSGLITCH_SRC },
+    { .path = "(embedded)", .content = FRAG_DISTORTION_SRC },
+    { .path = "(embedded)", .content = FRAG_ZOOMBLUR_SRC },
+    { .path = "(embedded)", .content = FRAG_POSTERIZE_SRC },
+    { .path = "(embedded)", .content = FRAG_PIXELATE_SRC },
+    { .path = "(embedded)", .content = FRAG_SEPIA_SRC },
+    { .path = "(embedded)", .content = FRAG_EMBOSS_SRC },
 };
 static GLuint programs[SHADER_COUNT];
 static ShaderMode current_shader = SHADER_NORMAL;
@@ -70,6 +92,13 @@ static const char *fragment_paths[SHADER_COUNT] = {
     "src/shaders/frag_crt.glsl",
     "src/shaders/frag_grayscale.glsl",
     "src/shaders/frag_edge.glsl",
+    "src/shaders/frag_vhsglitch.glsl",
+    "src/shaders/frag_distortion.glsl",
+    "src/shaders/frag_zoomblur.glsl",
+    "src/shaders/frag_posterize.glsl",
+    "src/shaders/frag_pixelate.glsl",
+    "src/shaders/frag_sepia.glsl",
+    "src/shaders/frag_emboss.glsl",
 };
 
 static void reload_shader(Shader *shader) {
@@ -78,10 +107,19 @@ static void reload_shader(Shader *shader) {
     fseek(f, 0, SEEK_END);
     long len = ftell(f);
     fseek(f, 0, SEEK_SET);
+    if (len < 0) {
+        fclose(f);
+        return;
+    }
     free((void*)shader->content);
     char *buf = malloc((size_t)len + 1);
-    fread(buf, 1, (size_t)len, f);
-    buf[len] = '\0';
+    if (!buf) {
+        shader->content = NULL;
+        fclose(f);
+        return;
+    }
+    size_t bytes_read = fread(buf, 1, (size_t)len, f);
+    buf[bytes_read] = '\0';
     shader->content = buf;
     fclose(f);
 }
@@ -154,7 +192,7 @@ static void flashlight_update(Flashlight *fl, float dt) {
 }
 
 static void draw(XImage *screenshot, Camera camera, GLuint shader, GLuint vao, GLuint texture,
-                 Vec2f window_size, Mouse mouse, Flashlight flashlight, int mirror) {
+                 Vec2f window_size, Mouse mouse, Flashlight flashlight, int mirror, float time) {
     (void)texture;
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -168,6 +206,7 @@ static void draw(XImage *screenshot, Camera camera, GLuint shader, GLuint vao, G
     glUniform1f(glGetUniformLocation(shader, "flShadow"), flashlight.shadow);
     glUniform1f(glGetUniformLocation(shader, "flRadius"), flashlight.radius);
     glUniform1i(glGetUniformLocation(shader, "mirror"), mirror ? 1 : 0);
+    glUniform1f(glGetUniformLocation(shader, "time"), time);
 
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
@@ -189,13 +228,20 @@ static Vec2f get_cursor_position(Display *display) {
 static Window select_window(Display *display) {
     Cursor cursor = XCreateFontCursor(display, XC_crosshair);
     Window root = DefaultRootWindow(display);
-    XGrabPointer(display, root, 0,
-                 ButtonMotionMask | ButtonPressMask | ButtonReleaseMask,
-                 GrabModeAsync, GrabModeAsync,
-                 root, cursor, CurrentTime);
-    XGrabKeyboard(display, root, 0,
-                  GrabModeAsync, GrabModeAsync,
-                  CurrentTime);
+    if (XGrabPointer(display, root, 0,
+                     ButtonMotionMask | ButtonPressMask | ButtonReleaseMask,
+                     GrabModeAsync, GrabModeAsync,
+                     root, cursor, CurrentTime) != GrabSuccess) {
+        XFreeCursor(display, cursor);
+        return root;
+    }
+    if (XGrabKeyboard(display, root, 0,
+                      GrabModeAsync, GrabModeAsync,
+                      CurrentTime) != GrabSuccess) {
+        XUngrabPointer(display, CurrentTime);
+        XFreeCursor(display, cursor);
+        return root;
+    }
 
     XEvent event;
     Window result = root;
@@ -276,10 +322,16 @@ int main(int argc, char **argv) {
     if (!home) home = ".";
 
     char boomer_dir[4096];
-    snprintf(boomer_dir, sizeof(boomer_dir), "%s/.config/cboomer", home);
+    if (snprintf(boomer_dir, sizeof(boomer_dir), "%s/.config/cboomer", home) >= (int)sizeof(boomer_dir)) {
+        fprintf(stderr, "HOME path too long\n");
+        return 1;
+    }
 
     char config_file[8192];
-    snprintf(config_file, sizeof(config_file), "%s/config", boomer_dir);
+    if (snprintf(config_file, sizeof(config_file), "%s/config", boomer_dir) >= (int)sizeof(config_file)) {
+        fprintf(stderr, "Config path too long\n");
+        return 1;
+    }
 
     int windowed = 0;
     double delay_sec = 0.0;
@@ -318,7 +370,10 @@ int main(int argc, char **argv) {
 
                 {
                     char dir[8192];
-                    snprintf(dir, sizeof(dir), "%s", new_config_path);
+                    if (snprintf(dir, sizeof(dir), "%s", new_config_path) >= (int)sizeof(dir)) {
+                        fprintf(stderr, "Config path too long\n");
+                        return 1;
+                    }
                     char *slash = strrchr(dir, '/');
                     if (slash) {
                         *slash = '\0';
@@ -356,7 +411,10 @@ int main(int argc, char **argv) {
                     usage();
                     return 1;
                 }
-                snprintf(config_file, sizeof(config_file), "%s", argv[i + 1]);
+                if (snprintf(config_file, sizeof(config_file), "%s", argv[i + 1]) >= (int)sizeof(config_file)) {
+                    fprintf(stderr, "Config path too long\n");
+                    return 1;
+                }
                 i += 2;
             } else {
                 fprintf(stderr, "Unknown flag `%s`\n", arg);
@@ -368,7 +426,7 @@ int main(int argc, char **argv) {
 
     if (delay_sec > 0.0) {
         struct timespec ts = { (time_t)delay_sec, (long)((delay_sec - (time_t)delay_sec) * 1e9) };
-        nanosleep(&ts, NULL);
+        while (nanosleep(&ts, &ts) == -1 && errno == EINTR);
     }
 
     Config config = DEFAULT_CONFIG;
@@ -432,7 +490,11 @@ int main(int argc, char **argv) {
     printf("Visual 0x%x selected\n", (unsigned int)vi->visualid);
 
     XWindowAttributes root_attrs;
-    XGetWindowAttributes(display, DefaultRootWindow(display), &root_attrs);
+    Status root_attrs_ok = XGetWindowAttributes(display, DefaultRootWindow(display), &root_attrs);
+    if (!root_attrs_ok) {
+        root_attrs.width = 1920;
+        root_attrs.height = 1080;
+    }
 
     XSetWindowAttributes swa;
     swa.colormap = XCreateColormap(display, DefaultRootWindow(display), vi->visual, AllocNone);
@@ -463,6 +525,7 @@ int main(int argc, char **argv) {
 
     GLXContext glc = glXCreateContext(display, vi, NULL, GL_TRUE);
     glXMakeCurrent(display, win, glc);
+    XFree(vi);
 
 #ifdef DEVELOPER
     vertex_shader.path = "src/shaders/vert.glsl";
@@ -473,8 +536,20 @@ int main(int argc, char **argv) {
     for (int i = 0; i < SHADER_COUNT; i++) {
         programs[i] = new_shader_program(vertex_shader, fragment_shaders[i]);
     }
+#ifdef DEVELOPER
+    vertex_shader.content = NULL;
+    for (int i = 0; i < SHADER_COUNT; i++) {
+        fragment_shaders[i].content = NULL;
+    }
+#endif
 
     Screenshot screenshot = new_screenshot(display, tracking_window);
+    if (!screenshot.image) {
+        fprintf(stderr, "Failed to capture screenshot\n");
+        XDestroyWindow(display, win);
+        XCloseDisplay(display);
+        return 1;
+    }
 
     float w = (float)screenshot.image->width;
     float h = (float)screenshot.image->height;
@@ -533,6 +608,7 @@ int main(int argc, char **argv) {
     Mouse mouse = { .curr = cursor_pos, .prev = cursor_pos, .drag = 0 };
     Flashlight flashlight = { .is_enabled = 0, .radius = 200.0f, .shadow = 0.0f, .delta_radius = 0.0f };
     int mirror = 0;
+    float elapsed = 0.0f;
 
     float dt = 1.0f / (float)rate;
     Window origin_window;
@@ -545,7 +621,7 @@ int main(int argc, char **argv) {
         }
 
         XWindowAttributes wa;
-        XGetWindowAttributes(display, win, &wa);
+        if (!XGetWindowAttributes(display, win, &wa)) continue;
         glViewport(0, 0, wa.width, wa.height);
 
         XEvent xev;
@@ -599,12 +675,10 @@ int main(int argc, char **argv) {
                     } else if (key == XK_q || key == XK_Escape) {
                         quitting = 1;
                     } else if (key == XK_r) {
-                        if (strlen(config_file) > 0) {
-                            FILE *check = fopen(config_file, "r");
-                            if (check) {
-                                fclose(check);
-                                config = load_config(config_file);
-                            }
+                        FILE *check = fopen(config_file, "r");
+                        if (check) {
+                            fclose(check);
+                            config = load_config(config_file);
                         }
 
 #ifdef DEVELOPER
@@ -672,7 +746,8 @@ int main(int argc, char **argv) {
 
         draw(screenshot.image, camera, programs[current_shader], vao, texture,
              vec2((float)wa.width, (float)wa.height),
-             mouse, flashlight, mirror);
+             mouse, flashlight, mirror, elapsed);
+        elapsed += dt;
 
         glXSwapBuffers(display, win);
         glFinish();
@@ -683,12 +758,11 @@ int main(int argc, char **argv) {
             float nw = (float)screenshot.image->width;
             float nh = (float)screenshot.image->height;
             float new_vertices[] = {
-                nw,   0.0f, 0.0f, 1.0f, 1.0f,
-                nw,   nh,   0.0f, 1.0f, 0.0f,
-                0.0f, nh,   0.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 0.0f, 0.0f, 1.0f
+                nw,   0.0f, 1.0f, 1.0f,
+                nw,   nh,   1.0f, 0.0f,
+                0.0f, nh,   0.0f, 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f
             };
-            GLuint new_indices[] = {0, 1, 3, 1, 2, 3};
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(new_vertices), new_vertices, GL_STATIC_DRAW);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, screenshot.image->width, screenshot.image->height,
@@ -706,6 +780,12 @@ int main(int argc, char **argv) {
     for (int i = 0; i < SHADER_COUNT; i++) {
         glDeleteProgram(programs[i]);
     }
+#ifdef DEVELOPER
+    free((void*)vertex_shader.content);
+    for (int i = 0; i < SHADER_COUNT; i++) {
+        free((void*)fragment_shaders[i].content);
+    }
+#endif
     destroy_screenshot(screenshot, display);
     glXDestroyContext(display, glc);
     XDestroyWindow(display, win);
