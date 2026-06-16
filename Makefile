@@ -1,16 +1,30 @@
 CC ?= gcc
 CFLAGS ?= -Wall -Wextra -pedantic -std=c11 -O2 -g
-LDFLAGS = -lX11 -lXrandr -lXext -lGL -lm
+LDLIBS = -lX11 -lXrandr -lXext -lGL -lm
 PREFIX ?= /usr/local
 
-BUILD = build
-SRC = src/main.c src/la.c src/config.c src/navigation.c src/screenshot.c
-OBJ = $(SRC:src/%.c=$(BUILD)/%.o)
-BIN = $(shell pwd)/cboomer
+BUILD := build
+SRC := src/main.c src/la.c src/config.c src/navigation.c src/screenshot.c
+OBJ := $(SRC:src/%.c=$(BUILD)/%.o)
+BIN := $(CURDIR)/cboomer
 
 GIT_HASH := $(shell git rev-parse HEAD 2>/dev/null || echo unknown)
 CFLAGS += -DGIT_HASH=\"$(GIT_HASH)\" -I$(BUILD)
 
+ifneq ($(filter dev,$(MAKECMDGOALS)),)
+CFLAGS += -DDEVELOPER
+endif
+ifneq ($(filter live,$(MAKECMDGOALS)),)
+CFLAGS += -DLIVE
+endif
+ifneq ($(filter mitshm,$(MAKECMDGOALS)),)
+CFLAGS += -DMITSHM
+endif
+ifneq ($(filter select,$(MAKECMDGOALS)),)
+CFLAGS += -DSELECT
+endif
+
+.DELETE_ON_ERROR:
 .PHONY: all clean dev live mitshm select install uninstall reinstall help
 
 all: $(BIN)
@@ -41,23 +55,13 @@ $(BUILD):
 
 $(BUILD)/main.o: $(BUILD)/shaders.h
 
-$(BUILD)/%.o: src/%.c | $(BUILD)
+$(BUILD)/%.o: src/%.c Makefile | $(BUILD)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(BIN): $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS)
 
-dev: CFLAGS += -DDEVELOPER
-dev: clean $(BIN)
-
-live: CFLAGS += -DLIVE
-live: clean $(BIN)
-
-mitshm: CFLAGS += -DMITSHM
-mitshm: clean $(BIN)
-
-select: CFLAGS += -DSELECT
-select: clean $(BIN)
+dev live mitshm select: $(BIN)
 
 install: $(BIN)
 	install -d $(DESTDIR)$(PREFIX)/bin
@@ -89,7 +93,8 @@ help:
 	@echo "  CC=$(CC)             C compiler"
 	@echo "  CFLAGS=$(CFLAGS)"
 	@echo ""
-	@echo "Flags can be combined, e.g. 'make dev live mitshm select'"
+	@echo "Stack flags: 'make dev live' builds with -DDEVELOPER -DLIVE"
+	@echo "Run 'make clean' between unrelated builds to avoid stale objects"
 
 clean:
 	rm -rf $(BUILD) cboomer
