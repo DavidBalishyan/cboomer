@@ -106,4 +106,4 @@ commit: [eb7d62c](https://github.com/DavidBalishyan/cboomer/commit/eb7d62cec997f
 - **Windowed mode remembers position** - `--windowed` saves the window position to `$HOME/.config/cboomer/state` on exit and restores it on startup (`src/main.c`).
 - **Save view to PPM** - press `s` to save the current rendered view (with shaders applied) to `cboomer_<timestamp>.ppm` via `glReadPixels`; configurable via `screenshot_dir` config key, defaults to `~/Pictures/Screenshots` (`src/main.c`, `src/config.c`, `src/config.h`).
 
-commit: [TODO]
+commit: [39f1496](https://github.com/DavidBalishyan/cboomer/commit/39f14961a30260109247298ad073219f6688947d)
