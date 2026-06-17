@@ -18,6 +18,7 @@ syntax keyword cboomerKey
     \ osd
     \ smooth_reset
     \ font
+    \ screenshot_dir
 
 syntax match cboomerOperator "="
 
