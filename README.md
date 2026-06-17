@@ -98,9 +98,21 @@ min_scale = 0.01
 scroll_speed = 1.50
 drag_friction = 6.00
 scale_friction = 4.00
-ppm_save_path = $HOME/.config/cboomer/screenshot.ppm
+ppm_save_path = "$HOME/.config/cboomer/screenshot.ppm"
 ppm_save = false
 ```
+
+Values are typed by their literal form:
+
+| Example | Type |
+|---|---|
+| `"hello"` | string |
+| `'x'` | char |
+| `42` | int |
+| `3.14` | double |
+| `true` / `false` | bool |
+
+Lines starting with `#` and inline comments after `#` are ignored. Boolean values accept `true`/`false`, `1`/`0`, `yes`/`no`, and `on`/`off`. Path values accept `$HOME/...` and `~/...` - both expand to the user's home directory.
 
 | Parameter | Default | Description |
 |---|---|---|
@@ -110,6 +122,10 @@ ppm_save = false
 | `scale_friction` | `4.0` | How quickly zoom momentum decays |
 | `ppm_save_path` | `$HOME/.config/cboomer/screenshot.ppm` | Path to save a PPM screenshot on startup |
 | `ppm_save` | `false` | When `true`, saves a PPM screenshot to `ppm_save_path` on startup |
+| `default_shader` | `"Normal"` | Default shader on startup (one of the shader names listed below) |
+| `mirror` | `false` | Start with mirror mode enabled |
+| `flashlight_radius` | `200.0` | Initial flashlight radius in pixels |
+| `scroll_invert` | `false` | Invert scroll-to-zoom direction |
 
 ## How It Works
 
@@ -149,12 +165,21 @@ All fragment shaders share the same uniforms (`tex`, `cursorPos`, `windowSize`, 
 
 When built with `make dev`, pressing Ctrl+r at runtime re-reads all `.glsl` files from disk, recompiles both the vertex and all fragment shaders, and re-links every program. This allows live iteration on shader code without restarting the viewer.
 
+## Editor Support
+
+Syntax highlighting for the config file is available:
+
+- **Vim**: `editors/vim/cboomer.vim`- copy to `~/.vim/syntax/` and add `au BufRead,BufNewFile */cboomer/config setfiletype cboomer` to your vimrc (or use `editors/vim/ftdetect.vim` in `~/.vim/ftdetect/`).
+- **Emacs**: `editors/emacs/cboomer-mode.el`- load and it auto-detects files named `cboomer/config`.
+
 ## Credits
 
 - Original [Nim implementation](https://github.com/tsoding/boomer) by [Tsoding](https://twitch.tv/tsoding)
 - X11/GLX reference: [Programming OpenGL in Linux](https://www.khronos.org/opengl/wiki/Programming_OpenGL_in_Linux:_GLX_and_Xlib)
 - [Edge Detection Shaders](https://www.flyriver.com/g/edge-detection-shaders?auth=1781341835102)
 - [OpenGL documentation](https://docs.gl)
+- [Elisp documentation](https://emacsdocs.org/docs/elisp/Emacs-Lisp)
+- [Vimscript page](https://vimhelp.org/usr_41.txt.html)
 
 ## License
 

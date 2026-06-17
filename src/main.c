@@ -35,24 +35,7 @@ typedef struct {
     const char *content;
 } Shader;
 
-#define SHADER_COUNT 12
-
-typedef enum {
-    SHADER_NORMAL,
-    SHADER_INVERT,
-    SHADER_CRT,
-    SHADER_GRAYSCALE,
-    SHADER_EDGE,
-    SHADER_VHSGLITCH,
-    SHADER_DISTORTION,
-    SHADER_ZOOMBLUR,
-    SHADER_POSTERIZE,
-    SHADER_PIXELATE,
-    SHADER_SEPIA,
-    SHADER_EMBOSS,
-} ShaderMode;
-
-static const char *shader_names[SHADER_COUNT] = {
+const char *shader_names[SHADER_COUNT] = {
     "Normal",
     "Invert",
     "CRT",
@@ -83,7 +66,7 @@ static Shader fragment_shaders[SHADER_COUNT] = {
     { .path = "(embedded)", .content = FRAG_EMBOSS_SRC },
 };
 static GLuint programs[SHADER_COUNT];
-static ShaderMode current_shader = SHADER_NORMAL;
+static ShaderMode current_shader;
 
 #ifdef DEVELOPER
 static const char *fragment_paths[SHADER_COUNT] = {
@@ -137,7 +120,7 @@ static GLuint new_shader(Shader shader, GLenum kind) {
         char info_log[512];
         glGetShaderInfoLog(result, sizeof(info_log), NULL, info_log);
         fprintf(stderr, "------------------------------\n");
-        fprintf(stderr, "Error during shader compilation: %s. Log:\n", shader.path);
+        err("during shader compilation: %s. Log:\n", shader.path);
         fprintf(stderr, "%s\n", info_log);
         fprintf(stderr, "------------------------------\n");
     }
@@ -161,6 +144,7 @@ static GLuint new_shader_program(Shader vertex, Shader fragment) {
     if (!success) {
         char info_log[512];
         glGetProgramInfoLog(program, sizeof(info_log), NULL, info_log);
+        err("shader program link failed\n");
         fprintf(stderr, "%s\n", info_log);
     }
 
@@ -267,7 +251,7 @@ done:
 static int x_error_handler(Display *display, XErrorEvent *error) {
     char error_message[256];
     XGetErrorText(display, error->error_code, error_message, sizeof(error_message));
-    fprintf(stderr, "X ELEVEN ERROR: %s\n", error_message);
+    err("X11: %s\n", error_message);
     return 0;
 }
 
@@ -323,13 +307,13 @@ int main(int argc, char **argv) {
 
     char boomer_dir[4096];
     if (snprintf(boomer_dir, sizeof(boomer_dir), "%s/.config/cboomer", home) >= (int)sizeof(boomer_dir)) {
-        fprintf(stderr, "HOME path too long\n");
+        err("HOME path too long\n");
         return 1;
     }
 
     char config_file[8192];
     if (snprintf(config_file, sizeof(config_file), "%s/config", boomer_dir) >= (int)sizeof(config_file)) {
-        fprintf(stderr, "Config path too long\n");
+        err("Config path too long\n");
         return 1;
     }
 
@@ -343,10 +327,11 @@ int main(int argc, char **argv) {
 
             if (strcmp(arg, "-d") == 0 || strcmp(arg, "--delay") == 0) {
                 if (i + 1 >= argc) {
-                    fprintf(stderr, "No value is provided for %s\n", arg);
+                    err("No value is provided for %s\n", arg);
                     usage();
                     return 1;
                 }
+
                 delay_sec = atof(argv[i + 1]);
                 i += 2;
             } else if (strcmp(arg, "-w") == 0 || strcmp(arg, "--windowed") == 0) {
@@ -371,7 +356,7 @@ int main(int argc, char **argv) {
                 {
                     char dir[8192];
                     if (snprintf(dir, sizeof(dir), "%s", new_config_path) >= (int)sizeof(dir)) {
-                        fprintf(stderr, "Config path too long\n");
+                        err("Config path too long\n");
                         return 1;
                     }
                     char *slash = strrchr(dir, '/');
@@ -397,7 +382,7 @@ int main(int argc, char **argv) {
                     fflush(stdout);
                     char resp;
                     if (scanf("%c", &resp) == 1 && resp != 'y') {
-                        fprintf(stderr, "Disaster prevented\n");
+                        err("Disaster prevented\n");
                         return 1;
                     }
                 }
@@ -407,17 +392,17 @@ int main(int argc, char **argv) {
                 return 0;
             } else if (strcmp(arg, "-c") == 0 || strcmp(arg, "--config") == 0) {
                 if (i + 1 >= argc) {
-                    fprintf(stderr, "No value is provided for %s\n", arg);
+                    err("No value is provided for %s\n", arg);
                     usage();
                     return 1;
                 }
                 if (snprintf(config_file, sizeof(config_file), "%s", argv[i + 1]) >= (int)sizeof(config_file)) {
-                    fprintf(stderr, "Config path too long\n");
+                    err("Config path too long\n");
                     return 1;
                 }
                 i += 2;
             } else {
-                fprintf(stderr, "Unknown flag `%s`\n", arg);
+                err("Unknown flag `%s`\n", arg);
                 usage();
                 return 1;
             }
@@ -440,12 +425,16 @@ int main(int argc, char **argv) {
         }
     }
 
-    printf("Using config: min_scale=%.2f scroll_speed=%.2f drag_friction=%.2f scale_friction=%.2f\n",
-           config.min_scale, config.scroll_speed, config.drag_friction, config.scale_friction);
+    current_shader = config.default_shader;
+
+    printf("Using config: min_scale=%.2f scroll_speed=%.2f drag_friction=%.2f scale_friction=%.2f"
+           " shader=%s mirror=%d\n",
+           config.min_scale, config.scroll_speed, config.drag_friction, config.scale_friction,
+           shader_names[current_shader], config.mirror);
 
     Display *display = XOpenDisplay(NULL);
     if (!display) {
-        fprintf(stderr, "Failed to open display\n");
+        err("Failed to open display\n");
         return 1;
     }
 
@@ -467,7 +456,7 @@ int main(int argc, char **argv) {
     if (!glXQueryVersion(display, &glx_major, &glx_minor) ||
         (glx_major == 1 && glx_minor < 3) ||
         (glx_major < 1)) {
-        fprintf(stderr, "Invalid GLX version. Expected >=1.3\n");
+        err("Invalid GLX version. Expected >=1.3\n");
         XCloseDisplay(display);
         return 1;
     }
@@ -483,7 +472,7 @@ int main(int argc, char **argv) {
 
     XVisualInfo *vi = glXChooseVisual(display, 0, attrs);
     if (!vi) {
-        fprintf(stderr, "No appropriate visual found\n");
+        err("No appropriate visual found\n");
         XCloseDisplay(display);
         return 1;
     }
@@ -545,7 +534,7 @@ int main(int argc, char **argv) {
 
     Screenshot screenshot = new_screenshot(display, tracking_window);
     if (!screenshot.image) {
-        fprintf(stderr, "Failed to capture screenshot\n");
+        err("Failed to capture screenshot\n");
         XDestroyWindow(display, win);
         XCloseDisplay(display);
         return 1;
@@ -619,8 +608,8 @@ int main(int argc, char **argv) {
     Camera camera = { .scale = 1.0f };
     Vec2f cursor_pos = get_cursor_position(display);
     Mouse mouse = { .curr = cursor_pos, .prev = cursor_pos, .drag = 0 };
-    Flashlight flashlight = { .is_enabled = 0, .radius = 200.0f, .shadow = 0.0f, .delta_radius = 0.0f };
-    int mirror = 0;
+    Flashlight flashlight = { .is_enabled = 0, .radius = config.flashlight_radius, .shadow = 0.0f, .delta_radius = 0.0f };
+    int mirror = config.mirror;
     float elapsed = 0.0f;
 
     float dt = 1.0f / (float)rate;
@@ -669,14 +658,14 @@ int main(int argc, char **argv) {
                         if (ctrl && flashlight.is_enabled) {
                             flashlight.delta_radius += INITIAL_FL_DELTA_RADIUS;
                         } else {
-                            camera.delta_scale += config.scroll_speed;
+                            camera.delta_scale += config.scroll_invert ? -config.scroll_speed : config.scroll_speed;
                             camera.scale_pivot = mouse.curr;
                         }
                     } else if (key == XK_minus || key == XK_KP_Subtract) {
                         if (ctrl && flashlight.is_enabled) {
                             flashlight.delta_radius -= INITIAL_FL_DELTA_RADIUS;
                         } else {
-                            camera.delta_scale -= config.scroll_speed;
+                            camera.delta_scale -= config.scroll_invert ? -config.scroll_speed : config.scroll_speed;
                             camera.scale_pivot = mouse.curr;
                         }
                     } else if (key == XK_0) {
@@ -692,6 +681,11 @@ int main(int argc, char **argv) {
                         if (check) {
                             fclose(check);
                             config = load_config(config_file);
+                            current_shader = config.default_shader;
+                            mirror = config.mirror;
+                            flashlight.radius = config.flashlight_radius;
+                            printf("Config reloaded: shader=%s mirror=%d scroll_invert=%d\n",
+                                   shader_names[current_shader], mirror, config.scroll_invert);
                         }
 
 #ifdef DEVELOPER
@@ -732,14 +726,14 @@ int main(int argc, char **argv) {
                         if ((xev.xkey.state & ControlMask) && flashlight.is_enabled) {
                             flashlight.delta_radius += INITIAL_FL_DELTA_RADIUS;
                         } else {
-                            camera.delta_scale += config.scroll_speed;
+                            camera.delta_scale += config.scroll_invert ? -config.scroll_speed : config.scroll_speed;
                             camera.scale_pivot = mouse.curr;
                         }
                     } else if (xev.xbutton.button == Button5) {
                         if ((xev.xkey.state & ControlMask) && flashlight.is_enabled) {
                             flashlight.delta_radius -= INITIAL_FL_DELTA_RADIUS;
                         } else {
-                            camera.delta_scale -= config.scroll_speed;
+                            camera.delta_scale -= config.scroll_invert ? -config.scroll_speed : config.scroll_speed;
                             camera.scale_pivot = mouse.curr;
                         }
                     }

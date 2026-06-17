@@ -4,6 +4,28 @@
 #include <string.h>
 #include "config.h"
 
+void warn(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    if (isatty(STDERR_FILENO))
+        fprintf(stderr, "\033[33mWarning\033[0m: ");
+    else
+        fprintf(stderr, "Warning: ");
+    vfprintf(stderr, fmt, args);
+    va_end(args);
+}
+
+void err(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    if (isatty(STDERR_FILENO))
+        fprintf(stderr, "\033[31mError\033[0m: ");
+    else
+        fprintf(stderr, "Error: ");
+    vfprintf(stderr, fmt, args);
+    va_end(args);
+}
+
 const Config DEFAULT_CONFIG = {
     .min_scale = 0.01,
     .scroll_speed = 1.5,
@@ -11,6 +33,10 @@ const Config DEFAULT_CONFIG = {
     .scale_friction = 4.0,
     .ppm_save_path = "$HOME/.config/cboomer/screenshot.ppm",
     .ppm_save = false,
+    .default_shader = SHADER_NORMAL,
+    .mirror = false,
+    .flashlight_radius = 200.0f,
+    .scroll_invert = false,
 };
 
 Config load_config(const char *file_path) {
@@ -22,10 +48,15 @@ Config load_config(const char *file_path) {
     }
 
     char line[512];
+    int lineno = 0;
     while (fgets(line, sizeof(line), f)) {
+        lineno++;
         char *p = line;
         while (*p == ' ' || *p == '\t') p++;
         if (*p == '#' || *p == '\n' || *p == '\0') continue;
+
+        char *hash = strchr(p, '#');
+        if (hash) *hash = '\0';
 
         char *eq = strchr(p, '=');
         if (!eq) continue;
@@ -44,6 +75,19 @@ Config load_config(const char *file_path) {
         while (end >= value && (*end == ' ' || *end == '\t' || *end == '\n')) end--;
         *(end + 1) = '\0';
 
+        int quoted = 0;
+        if (*value == '"') {
+            quoted = 1;
+            value++;
+            end = value + strlen(value) - 1;
+            if (*end == '"') *end = '\0';
+        } else if (*value == '\'') {
+            quoted = 1;
+            value++;
+            end = value + strlen(value) - 1;
+            if (*end == '\'') *end = '\0';
+        }
+
         if (strcmp(key, "min_scale") == 0) {
             config.min_scale = atof(value);
             if (config.min_scale < 0.001) config.min_scale = 0.001;
@@ -54,17 +98,62 @@ Config load_config(const char *file_path) {
         } else if (strcmp(key, "scale_friction") == 0) {
             config.scale_friction = atof(value);
         } else if (strcmp(key, "ppm_save") == 0) {
-              if (strcmp(value, "true") == 0 || strcmp(value, "1") == 0) {
+              if (strcmp(value, "true") == 0 || strcmp(value, "1") == 0 ||
+                  strcmp(value, "yes") == 0 || strcmp(value, "on") == 0) {
                     config.ppm_save = true;
-              } else if (strcmp(value, "false") == 0 || strcmp(value, "0") == 0) {
+              } else if (strcmp(value, "false") == 0 || strcmp(value, "0") == 0 ||
+                         strcmp(value, "no") == 0 || strcmp(value, "off") == 0) {
                     config.ppm_save = false;
               }
+        } else if (strcmp(key, "default_shader") == 0) {
+            if (!quoted) {
+                warn("config line %d: string values should be quoted: `%s`\n", lineno, key);
+            }
+            for (int i = 0; i < SHADER_COUNT; i++) {
+                if (strcmp(value, shader_names[i]) == 0) {
+                    config.default_shader = i;
+                    break;
+                }
+            }
+        } else if (strcmp(key, "mirror") == 0) {
+              if (strcmp(value, "true") == 0 || strcmp(value, "1") == 0 ||
+                  strcmp(value, "yes") == 0 || strcmp(value, "on") == 0) {
+                    config.mirror = true;
+              } else if (strcmp(value, "false") == 0 || strcmp(value, "0") == 0 ||
+                         strcmp(value, "no") == 0 || strcmp(value, "off") == 0) {
+                    config.mirror = false;
+              }
+        } else if (strcmp(key, "scroll_invert") == 0) {
+              if (strcmp(value, "true") == 0 || strcmp(value, "1") == 0 ||
+                  strcmp(value, "yes") == 0 || strcmp(value, "on") == 0) {
+                    config.scroll_invert = true;
+              } else if (strcmp(value, "false") == 0 || strcmp(value, "0") == 0 ||
+                         strcmp(value, "no") == 0 || strcmp(value, "off") == 0) {
+                    config.scroll_invert = false;
+              }
+        } else if (strcmp(key, "flashlight_radius") == 0) {
+            config.flashlight_radius = (float)atof(value);
+            if (config.flashlight_radius < 0.0f) config.flashlight_radius = 0.0f;
         } else if (strcmp(key, "ppm_save_path") == 0) {
+            if (!quoted) {
+                warn("config line %d: string values should be quoted: `%s`\n", lineno, key);
+            }
             config.ppm_save_path = malloc(strlen(value) + 1);
             strcpy(config.ppm_save_path, value);
+            if (config.ppm_save_path[0] == '~' &&
+                (config.ppm_save_path[1] == '/' || config.ppm_save_path[1] == '\0')) {
+                char *home = getenv("HOME");
+                if (home) {
+                    char *expanded = malloc(strlen(home) + strlen(config.ppm_save_path + 1) + 1);
+                    strcpy(expanded, home);
+                    strcat(expanded, config.ppm_save_path + 1);
+                    free(config.ppm_save_path);
+                    config.ppm_save_path = expanded;
+                }
+            }
         }
         else {
-            fprintf(stderr, "Warning: unknown config key `%s`\n", key);
+            warn("config line %d: unknown key `%s`\n", lineno, key);
         }
     }
 
@@ -87,14 +176,40 @@ Config load_config(const char *file_path) {
 void generate_default_config(const char *file_path) {
     FILE *f = fopen(file_path, "w");
     if (!f) {
-        fprintf(stderr, "Could not open %s for writing\n", file_path);
+        err("Could not open %s for writing\n", file_path);
         exit(1);
     }
-    fprintf(f, "min_scale = %.2f\n", DEFAULT_CONFIG.min_scale);
-    fprintf(f, "scroll_speed = %.2f\n", DEFAULT_CONFIG.scroll_speed);
-    fprintf(f, "drag_friction = %.2f\n", DEFAULT_CONFIG.drag_friction);
-    fprintf(f, "scale_friction = %.2f\n", DEFAULT_CONFIG.scale_friction);
-    fprintf(f, "ppm_save_path = %s\n", DEFAULT_CONFIG.ppm_save_path);
-    fprintf(f, "ppm_save = %s\n", DEFAULT_CONFIG.ppm_save ? "true" : "false");
+    fprintf(f, "# cboomer config\n");
+    fprintf(f, "#\n");
+    fprintf(f, "# This file is read from ~/.config/cboomer/config on startup.\n");
+    fprintf(f, "# Run `cboomer --new-config` to regenerate.\n");
+    fprintf(f, "#\n");
+    fprintf(f, "# Types are inferred from the literal:\n");
+    fprintf(f, "#   quoted \"string\", 'char', 42 (int), 3.14 (float), true/false yes/no on/off (bool)\n");
+    fprintf(f, "# Comments start with #.\n");
+    fprintf(f, "\n");
+    fprintf(f, "# Minimum zoom scale (float). Prevents zooming out too far.\n");
+    fprintf(f, "min_scale = %.2f\n\n", DEFAULT_CONFIG.min_scale);
+    fprintf(f, "# Scroll/trackpad sensitivity (float). Higher = faster.\n");
+    fprintf(f, "scroll_speed = %.2f\n\n", DEFAULT_CONFIG.scroll_speed);
+    fprintf(f, "# Friction applied when dragging (float). 0 = no friction.\n");
+    fprintf(f, "drag_friction = %.2f\n\n", DEFAULT_CONFIG.drag_friction);
+    fprintf(f, "# Friction applied when zooming (float). 0 = no friction.\n");
+    fprintf(f, "scale_friction = %.2f\n\n", DEFAULT_CONFIG.scale_friction);
+    fprintf(f, "# Invert scroll-to-zoom direction (bool).\n");
+    fprintf(f, "scroll_invert = %s\n\n", DEFAULT_CONFIG.scroll_invert ? "true" : "false");
+    fprintf(f, "# Path to save a PPM screenshot on startup (string).\n");
+    fprintf(f, "# Supports ~/ and $HOME/ expansion.\n");
+    fprintf(f, "ppm_save_path = \"%s\"\n\n", DEFAULT_CONFIG.ppm_save_path);
+    fprintf(f, "# Enable PPM screenshot on startup (bool). true/false, yes/no, on/off.\n");
+    fprintf(f, "ppm_save = %s\n\n", DEFAULT_CONFIG.ppm_save ? "true" : "false");
+    fprintf(f, "# Default shader (string). Matches one of the shader names shown when cycling with 't'.\n");
+    fprintf(f, "# Options: Normal, Invert, CRT, Grayscale, Edge, VHS Glitch, Distortion,\n");
+    fprintf(f, "#          Zoom Blur, Posterize, Pixelate, Sepia, Emboss\n");
+    fprintf(f, "default_shader = \"%s\"\n\n", shader_names[DEFAULT_CONFIG.default_shader]);
+    fprintf(f, "# Start with mirror mode enabled (bool).\n");
+    fprintf(f, "mirror = %s\n\n", DEFAULT_CONFIG.mirror ? "true" : "false");
+    fprintf(f, "# Initial flashlight radius in pixels (float).\n");
+    fprintf(f, "flashlight_radius = %.1f\n", DEFAULT_CONFIG.flashlight_radius);
     fclose(f);
 }

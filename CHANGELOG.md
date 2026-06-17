@@ -73,3 +73,22 @@ commit: [2deaacc](https://github.com/DavidBalishyan/cboomer/commit/2deaaccf86d6a
 - **Added release.sh** - automates changelog commit-hash replacement, tagging, pushing, and GitHub release creation (`scripts/release.sh`).
 
 commit: [2f00a47](https://github.com/DavidBalishyan/cboomer/commit/2f00a4773c741ec7e1bf9a45b90ab9888c386767)
+
+# v1.3.1
+
+## What's new
+- **Typed config values** - values can be written as `"string"`, `'c'`, `42`, `3.14`, `true`/`false`; the parser infers the type from the literal form (`src/config.c:52-63`).
+- **Inline comments in config** - `#` now works mid-line, not just at the start (`src/config.c:32-33`).
+- **`~` expansion in ppm_save_path** - `ppm_save_path = ~/cap.ppm` now expands like `$HOME/...` (`src/config.c:76-86`).
+- **More boolean aliases** - `yes`/`no` and `on`/`off` accepted alongside `true`/`false`/`1`/`0` (`src/config.c:68-73`).
+- **Line numbers in config warnings** - unknown key warnings now say which line (`src/config.c:91`).
+- **Colored output** - `Warning:` and `Error:` are yellow/red when stderr is a terminal (`src/config.h:9-27`, `src/config.c:9-27`).
+- **Warning on unquoted strings** - `ppm_save_path` without quotes prints a warning (`src/config.c:84`).
+- **Editor support** - vim syntax highlighting and emacs major mode for config files (`editors/vim/cboomer.vim`, `editors/emacs/cboomer-mode.el`).
+- **default_shader config option** - pick the starting shader by name (`Normal`, `Sepia`, etc.) instead of always starting at Normal (`src/config.c`).
+- **mirror config option** - start with mirror mode enabled (`src/config.c`).
+- **flashlight_radius config option** - set the initial flashlight radius in pixels (`src/config.c`).
+- **scroll_invert config option** - invert scroll-to-zoom direction (`src/config.c`).
+- **ShaderMode enum moved to config.h** - `shader_names` is now exported so the config parser can match shader names.
+
+commit: [TODO]

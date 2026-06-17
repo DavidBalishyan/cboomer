@@ -26,6 +26,16 @@
 - [x] implement ppm_save_path config option and wire it up in main
 - [x] add install-deps.sh script to automate build dependency installation
 - [x] add release.sh script to automate tagging and GitHub releases
+- [x] add inline comment support (#) and line numbers in config parser warnings
+- [x] add ~ expansion and yes/no/on/off boolean values to config parser
+- [x] add typed config values ("string", 'c', 42, 3.14, true/false)
+- [x] output quoted strings in generated default config
+- [x] add colored output (yellow warnings, red errors) with tty detection
+- [x] warn on unquoted string values in config
+- [x] add vim syntax highlighting and emacs major mode for config files
+
+## Done
+- [x] add default_shader, mirror, flashlight_radius, scroll_invert config options
 
 ## High priority
 
