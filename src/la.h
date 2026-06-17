@@ -18,4 +18,4 @@ void vec2_sub_eq(Vec2f *a, Vec2f b);
 float vec2_length(Vec2f a);
 Vec2f vec2_normalize(Vec2f a);
 
-#endif
+#endif // LA_H_

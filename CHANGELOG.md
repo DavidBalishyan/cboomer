@@ -27,7 +27,6 @@ Commit: [822a079](https://github.com/DavidBalishyan/cboomer/commit/822a0795fc8e2
 - **README overhaul** - added demo video link, full shader documentation explaining every effect, and improved build variant table.
 - **Build the binary to CWD** - *cboomer* now lands in the project root instead of *build/*.
 
-
 Commit: [084b84f](https://github.com/DavidBalishyan/cboomer/commit/084b84fc45f76d57353ad1b7cdf954b035bdc18a)
 
 # v1.2.0
@@ -58,3 +57,19 @@ commit: [2deaacc](https://github.com/DavidBalishyan/cboomer/commit/2deaaccf86d6a
 - **Fixed undetected `snprintf` truncation** - config path construction silently used truncated paths (`src/main.c:308,311,350,388`).
 
 commit: [2deaacc](https://github.com/DavidBalishyan/cboomer/commit/2deaaccf86d6a9f12dfeff340247bc1fe28bf424)
+
+# v1.3.0
+
+## Fixes
+- **Defensive min_scale clamp in navigation.c** - `world()` and `camera_update()` now floor `camera.scale` to `0.001f` before any division, protecting against zero scale even if the config clamp is removed (`src/navigation.c:5,11`).
+- **Fixed int overflow in save_to_ppm** - `image->width * image->height` computed as `unsigned long` instead of `unsigned int` before loop, preventing wrap-around on large displays (`src/screenshot.c:124`).
+- **Extracted shader header generation to scripts/gen_shaders.sh** - Makefile recipe now delegates to a standalone script for clarity (`Makefile:36`, `scripts/gen_shaders.sh`).
+
+## What's new
+- **Wired up ppm_save config option** - when `ppm_save = true` in config, saves a PPM screenshot to `~/.config/cboomer/screenshot.ppm` on startup (`src/main.c:555-561`, `src/config.c:55-61`).
+- **Implemented ppm_save_path config option** - `ppm_save_path` in config file now controls where the PPM is saved instead of a hardcoded path; `$HOME` is expanded at load time (`src/config.c:62-64`, `src/main.c:554-565`).
+
+- **Added install-deps.sh** - automatically detects distro and installs all build dependencies (`scripts/install-deps.sh`).
+- **Added release.sh** - automates changelog commit-hash replacement, tagging, pushing, and GitHub release creation (`scripts/release.sh`).
+
+commit: [TODO]

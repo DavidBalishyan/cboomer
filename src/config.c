@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +9,8 @@ const Config DEFAULT_CONFIG = {
     .scroll_speed = 1.5,
     .drag_friction = 6.0,
     .scale_friction = 4.0,
+    .ppm_save_path = "$HOME/.config/cboomer/screenshot.ppm",
+    .ppm_save = false,
 };
 
 Config load_config(const char *file_path) {
@@ -50,12 +53,34 @@ Config load_config(const char *file_path) {
             config.drag_friction = atof(value);
         } else if (strcmp(key, "scale_friction") == 0) {
             config.scale_friction = atof(value);
-        } else {
+        } else if (strcmp(key, "ppm_save") == 0) {
+              if (strcmp(value, "true") == 0 || strcmp(value, "1") == 0) {
+                    config.ppm_save = true;
+              } else if (strcmp(value, "false") == 0 || strcmp(value, "0") == 0) {
+                    config.ppm_save = false;
+              }
+        } else if (strcmp(key, "ppm_save_path") == 0) {
+            config.ppm_save_path = malloc(strlen(value) + 1);
+            strcpy(config.ppm_save_path, value);
+        }
+        else {
             fprintf(stderr, "Warning: unknown config key `%s`\n", key);
         }
     }
 
     fclose(f);
+
+    char *home = getenv("HOME");
+    if (home && config.ppm_save_path && strncmp(config.ppm_save_path, "$HOME", 5) == 0) {
+        size_t len = strlen(home) + strlen(config.ppm_save_path + 5) + 1;
+        char *expanded = malloc(len);
+        snprintf(expanded, len, "%s%s", home, config.ppm_save_path + 5);
+        if (config.ppm_save_path != DEFAULT_CONFIG.ppm_save_path) {
+            free(config.ppm_save_path);
+        }
+        config.ppm_save_path = expanded;
+    }
+
     return config;
 }
 
@@ -69,5 +94,7 @@ void generate_default_config(const char *file_path) {
     fprintf(f, "scroll_speed = %.2f\n", DEFAULT_CONFIG.scroll_speed);
     fprintf(f, "drag_friction = %.2f\n", DEFAULT_CONFIG.drag_friction);
     fprintf(f, "scale_friction = %.2f\n", DEFAULT_CONFIG.scale_friction);
+    fprintf(f, "ppm_save_path = %s\n", DEFAULT_CONFIG.ppm_save_path);
+    fprintf(f, "ppm_save = %s\n", DEFAULT_CONFIG.ppm_save ? "true" : "false");
     fclose(f);
 }

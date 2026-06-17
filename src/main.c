@@ -551,6 +551,19 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    if (config.ppm_save) {
+        const char *path = config.ppm_save_path;
+        char expanded[8192];
+        const char *home = getenv("HOME");
+        if (home && strncmp(path, "$HOME", 5) == 0) {
+            if (snprintf(expanded, sizeof(expanded), "%s%s", home, path + 5) < (int)sizeof(expanded)) {
+                path = expanded;
+            }
+        }
+        save_to_ppm(screenshot.image, path);
+        printf("Saved screenshot to %s\n", path);
+    }
+
     float w = (float)screenshot.image->width;
     float h = (float)screenshot.image->height;
 

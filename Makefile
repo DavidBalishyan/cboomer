@@ -33,22 +33,7 @@ FRAG_SHADER_NAMES = frag_invert frag_crt frag_grayscale frag_edge frag_vhsglitch
 
 $(BUILD)/shaders.h: src/shaders/vert.glsl src/shaders/frag.glsl \
                     $(FRAG_SHADER_NAMES:%=src/shaders/%.glsl) | $(BUILD)
-	{ \
-		printf '#ifndef SHADERS_H_\n#define SHADERS_H_\n\n'; \
-		printf 'static const char VERT_SRC[] = "'; \
-		awk '{printf "%s\\n", $$0}' src/shaders/vert.glsl; \
-		printf '";\n\n'; \
-		printf 'static const char FRAG_SRC[] = "'; \
-		awk '{printf "%s\\n", $$0}' src/shaders/frag.glsl; \
-		printf '";\n\n'; \
-		for f in $(FRAG_SHADER_NAMES); do \
-			n=$$(echo "$$f" | sed 's/^frag_//' | tr '[:lower:]' '[:upper:]'); \
-			printf "static const char FRAG_%s_SRC[] = \"" "$$n"; \
-			awk '{printf "%s\\n", $$0}' "src/shaders/$$f.glsl"; \
-			printf '";\n\n'; \
-		done; \
-		printf '#endif\n'; \
-	} > $@
+	scripts/gen_shaders.sh $@
 
 $(BUILD):
 	mkdir -p $(BUILD)

@@ -24,4 +24,4 @@ typedef struct {
 Vec2f world(Camera camera, Vec2f v);
 void camera_update(Camera *camera, Config config, float dt, Mouse mouse, XImage *image, Vec2f window_size);
 
-#endif
+#endif // NAVIGATION_H_

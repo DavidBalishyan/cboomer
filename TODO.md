@@ -1,9 +1,6 @@
->[!NOTE]
->Not all of these things will be implemented in the future, but planning on the wayland port
 # TODO
 
-## Done (v1.2.1)
-
+## Done
 - [x] crash on shader hot-reload free() on embedded string constant
 - [x] LIVE mode rendering is garbled vertex layout mismatch (5 floats vs stride of 4)
 - [x] heap overflow in reload_shader when ftell fails (returns -1 then cast to size_t)
@@ -21,6 +18,14 @@
 - [x] snprintf truncation undetected for config paths
 - [x] dead strlen(config_file) > 0 check
 - [x] new_indices unused in LIVE build
+- [x] clamp min_scale in navigation.c too defensive in case someone removes the config clamp
+- [x] check for division by zero in vec2_div_f / vec2_div or just assert
+- [x] save_to_ppm int overflow (width * height)
+- [x] PPM output never called from main kill it or wire it up
+- [x] extract shader header generation to scripts/gen_shaders.sh
+- [x] implement ppm_save_path config option and wire it up in main
+- [x] add install-deps.sh script to automate build dependency installation
+- [x] add release.sh script to automate tagging and GitHub releases
 
 ## High priority
 
@@ -31,22 +36,20 @@
 
 ## Medium priority
 
-- [ ] clamp min_scale in navigation.c too defensive in case someone removes the config clamp
-- [ ] check for division by zero in vec2_div_f / vec2_div or just assert
 - [ ] add glGetError checks after shader compilation / texture upload
-- [ ] save_to_ppm has potential int overflow (width * height)
 - [ ] make --windowed mode remember window position between runs
-- [ ] add a --monitor flag to pick which display to capture
 
 ## Low priority / icebox
 
 - [ ] check if XRRGetScreenInfo / XRRConfigCurrentRate needs XFree
+- [ ] add a --monitor flag to pick which display to capture
 - [ ] refresh_screenshot MITSHM path if new_screenshot fails after destroy image is NULL
 - [ ] accept key repeat in shader cycling currently floods on held 't'
 - [ ] config reload on SIGHUP
 - [ ] maybe switch from XGetImage to a portal-based capture for Wayland compat
-- [ ] PPM output never called from main kill it or wire it up
 
+>[!NOTE]
+>These things probably aren't going to be implemented in the near future
 ## Wayland port notes
 
 Biggest blockers:

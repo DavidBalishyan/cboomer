@@ -2,11 +2,13 @@
 #include "navigation.h"
 
 Vec2f world(Camera camera, Vec2f v) {
-    return vec2_div_f(v, camera.scale);
+    float s = fmaxf(camera.scale, 0.001f);
+    return vec2_div_f(v, s);
 }
 
 void camera_update(Camera *camera, Config config, float dt, Mouse mouse, XImage *image, Vec2f window_size) {
     (void)image;
+    camera->scale = fmaxf(camera->scale, 0.001f);
 
     if (fabs(camera->delta_scale) > 0.5) {
         Vec2f p0 = vec2_div_f(vec2_sub(camera->scale_pivot, vec2_mul_f(window_size, 0.5f)), camera->scale);

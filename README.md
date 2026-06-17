@@ -8,6 +8,14 @@ Originally written in [Nim](https://github.com/nim-lang/Nim), this is a C11 rewr
 
 ## Dependencies
 
+Install build dependencies automatically:
+
+```console
+$ ./scripts/install-deps.sh
+```
+
+Or manually per-distro below:
+
 ### Debian / Ubuntu
 
 ```console
@@ -100,6 +108,8 @@ min_scale = 0.01
 scroll_speed = 1.50
 drag_friction = 6.00
 scale_friction = 4.00
+ppm_save_path = $HOME/.config/cboomer/screenshot.ppm
+ppm_save = false
 ```
 
 | Parameter | Default | Description |
@@ -108,6 +118,8 @@ scale_friction = 4.00
 | `scroll_speed` | `1.5` | Zoom speed per scroll tick |
 | `drag_friction` | `6.0` | How quickly panning momentum decays |
 | `scale_friction` | `4.0` | How quickly zoom momentum decays |
+| `ppm_save_path` | `$HOME/.config/cboomer/screenshot.ppm` | Path to save a PPM screenshot on startup |
+| `ppm_save` | `false` | When `true`, saves a PPM screenshot to `ppm_save_path` on startup |
 
 ## How It Works
 

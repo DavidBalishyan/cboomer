@@ -122,8 +122,9 @@ void save_to_ppm(XImage *image, const char *file_path) {
     FILE *f = fopen(file_path, "wb");
     if (!f) return;
 
+    unsigned long total_pixels = (unsigned long)image->width * image->height;
     fprintf(f, "P6\n%u %u\n255\n", image->width, image->height);
-    for (int i = 0; i < (int)(image->width * image->height); i++) {
+    for (unsigned long i = 0; i < total_pixels; i++) {
         fputc(image->data[i * 4 + 2], f);
         fputc(image->data[i * 4 + 1], f);
         fputc(image->data[i * 4 + 0], f);

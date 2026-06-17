@@ -20,4 +20,4 @@ void destroy_screenshot(Screenshot screenshot, Display *display);
 void refresh_screenshot(Screenshot *screenshot, Display *display, Window window);
 void save_to_ppm(XImage *image, const char *file_path);
 
-#endif
+#endif // SCREENSHOT_H_
