@@ -4,7 +4,7 @@ LDLIBS = -lX11 -lXrandr -lXext -lGL -lm
 PREFIX ?= /usr/local
 
 BUILD := build
-SRC := src/main.c src/la.c src/config.c src/navigation.c src/screenshot.c
+SRC := src/main.c src/la.c src/config.c src/navigation.c src/screenshot.c src/osd.c
 OBJ := $(SRC:src/%.c=$(BUILD)/%.o)
 BIN := $(CURDIR)/cboomer
 
@@ -32,13 +32,15 @@ all: $(BIN)
 FRAG_SHADER_NAMES = frag_invert frag_crt frag_grayscale frag_edge frag_vhsglitch frag_distortion frag_zoomblur frag_posterize frag_pixelate frag_sepia frag_emboss
 
 $(BUILD)/shaders.h: src/shaders/vert.glsl src/shaders/frag.glsl \
-                    $(FRAG_SHADER_NAMES:%=src/shaders/%.glsl) | $(BUILD)
+                    $(FRAG_SHADER_NAMES:%=src/shaders/%.glsl) \
+                    src/shaders/osd_vert.glsl src/shaders/osd_frag.glsl | $(BUILD)
 	scripts/gen_shaders.sh $@
 
 $(BUILD):
 	mkdir -p $(BUILD)
 
 $(BUILD)/main.o: $(BUILD)/shaders.h
+$(BUILD)/osd.o: $(BUILD)/shaders.h
 
 $(BUILD)/%.o: src/%.c Makefile | $(BUILD)
 	$(CC) $(CFLAGS) -c -o $@ $<

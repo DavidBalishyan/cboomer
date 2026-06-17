@@ -58,12 +58,14 @@ $ make dev live mitshm select
 | Drag with left mouse button | Pan the image around |
 | Scroll wheel | Zoom in / out |
 | `=` / `-` | Zoom in / out |
-| `0` | Reset position, scale, velocity, and mirror |
+| `0` | Reset position, scale, velocity, and mirror (smoothly if `smooth_reset` is enabled) |
+| `o` | Toggle on-screen display (shader, zoom, FPS) |
 | `q` / `Esc` | Quit |
 | `r` | Reload configuration file |
 | `m` | Mirror the image horizontally |
 | `f` | Toggle flashlight effect |
 | `t` | Cycle shader: Normal, Invert, CRT, Grayscale, Edge, VHS Glitch, Distortion, Zoom Blur, Posterize, Pixelate, Sepia, Emboss |
+| `s` | Save current view (with shaders applied) to `cboomer_<timestamp>.ppm` |
 | `Ctrl` + scroll / `+` / `-` | Adjust flashlight radius (when flashlight is on) |
 | `Ctrl` + `r` | Reload shaders from disk (developer build only) |
 
@@ -126,6 +128,10 @@ Lines starting with `#` and inline comments after `#` are ignored. Boolean value
 | `mirror` | `false` | Start with mirror mode enabled |
 | `flashlight_radius` | `200.0` | Initial flashlight radius in pixels |
 | `scroll_invert` | `false` | Invert scroll-to-zoom direction |
+| `osd` | `false` | Start with on-screen display visible (shader, zoom, FPS); toggle anytime with `o` |
+| `smooth_reset` | `true` | Smooth animation when resetting with `0` |
+| `font` | *(auto-detect)* | Path to a .ttf/.otf font for the OSD (full path or font name to search system); empty means auto-detect |
+| `screenshot_dir` | `~/Pictures/Screenshots` | Directory for rendered view saves (press `s`); supports `~/` expansion |
 
 ## How It Works
 
@@ -136,8 +142,7 @@ Lines starting with `#` and inline comments after `#` are ignored. Boolean value
 
 ## Shaders
 
-All shaders live in `src/shaders/` as GLSL 1.30 source files. At build time the Makefile converts them into C string constants embedded in the binary via `build/shaders.h`, so no external shader files are needed at runtime.
-
+All shaders live in `src/shaders/` as GLSL source files. At build time the Makefile converts them into C string constants embedded in the binary via `build/shaders.h`, so no external shader files are needed at runtime. This includes the OSD shaders (`osd_vert.glsl`, `osd_frag.glsl`) alongside the main rendering pipeline.
 Shaders that use animation receive a `time` uniform (elapsed seconds since launch). Non-animated shaders silently ignore it (OpenGL ignores `glUniform` for non-existent locations).
 
 ### Vertex shader (`vert.glsl`)
@@ -169,13 +174,14 @@ When built with `make dev`, pressing Ctrl+r at runtime re-reads all `.glsl` file
 
 Syntax highlighting for the config file is available:
 
-- **Vim**: `editors/vim/cboomer.vim`- copy to `~/.vim/syntax/` and add `au BufRead,BufNewFile */cboomer/config setfiletype cboomer` to your vimrc (or use `editors/vim/ftdetect.vim` in `~/.vim/ftdetect/`).
-- **Emacs**: `editors/emacs/cboomer-mode.el`- load and it auto-detects files named `cboomer/config`.
+- **Vim**: `editors/vim/cboomer.vim` - copy to `~/.vim/syntax/` and add `au BufRead,BufNewFile */cboomer/config setfiletype cboomer` to your vimrc (or use `editors/vim/ftdetect.vim` in `~/.vim/ftdetect/`).
+- **Emacs**: `editors/emacs/cboomer-mode.el` - load and it auto-detects files named `cboomer/config`.
 
 ## Credits
 
 - Original [Nim implementation](https://github.com/tsoding/boomer) by [Tsoding](https://twitch.tv/tsoding)
 - X11/GLX reference: [Programming OpenGL in Linux](https://www.khronos.org/opengl/wiki/Programming_OpenGL_in_Linux:_GLX_and_Xlib)
+- [stb single-file public domain libraries](https://github.com/nothings/stb)
 - [Edge Detection Shaders](https://www.flyriver.com/g/edge-detection-shaders?auth=1781341835102)
 - [OpenGL documentation](https://docs.gl)
 - [Elisp documentation](https://emacsdocs.org/docs/elisp/Emacs-Lisp)

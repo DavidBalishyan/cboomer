@@ -19,6 +19,12 @@ typedef struct {
     float scale;
     double delta_scale;
     Vec2f scale_pivot;
+    int animating;
+    Vec2f anim_start_pos;
+    float anim_start_scale;
+    Vec2f anim_end_pos;
+    float anim_end_scale;
+    float anim_t;
 } Camera;
 
 Vec2f world(Camera camera, Vec2f v);

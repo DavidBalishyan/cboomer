@@ -15,6 +15,9 @@ syntax keyword cboomerKey
     \ mirror
     \ flashlight_radius
     \ scroll_invert
+    \ osd
+    \ smooth_reset
+    \ font
 
 syntax match cboomerOperator "="
 

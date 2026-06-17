@@ -19,18 +19,26 @@ FRAG_NAMES="frag_invert frag_crt frag_grayscale frag_edge frag_vhsglitch frag_di
 
     printf 'static const char VERT_SRC[] = "'
     awk '{printf "%s\\n", $0}' src/shaders/vert.glsl
-    printf '";\n\n'
+    printf '";\n'
 
     printf 'static const char FRAG_SRC[] = "'
     awk '{printf "%s\\n", $0}' src/shaders/frag.glsl
-    printf '";\n\n'
+    printf '";\n'
 
     for f in $FRAG_NAMES; do
         n=$(echo "$f" | sed 's/^frag_//' | tr '[:lower:]' '[:upper:]')
         printf "static const char FRAG_%s_SRC[] = \"" "$n"
         awk '{printf "%s\\n", $0}' "src/shaders/$f.glsl"
-        printf '";\n\n'
+        printf '";\n'
     done
 
-    printf '#endif\n'
+    printf 'static const char OSD_VERT_SRC[] = "'
+    awk '{printf "%s\\n", $0}' src/shaders/osd_vert.glsl
+    printf '";\n'
+
+    printf 'static const char OSD_FRAG_SRC[] = "'
+    awk '{printf "%s\\n", $0}' src/shaders/osd_frag.glsl
+    printf '";\n\n'
+
+    printf '#endif // SHADERS_H_\n'
 } > "$OUT"

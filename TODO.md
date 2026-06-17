@@ -33,30 +33,31 @@
 - [x] add colored output (yellow warnings, red errors) with tty detection
 - [x] warn on unquoted string values in config
 - [x] add vim syntax highlighting and emacs major mode for config files
-
-## Done
 - [x] add default_shader, mirror, flashlight_radius, scroll_invert config options
+- [x] add osd config option, 'o' key toggle, on-screen display
+- [x] add smooth_reset config option for animated camera reset on 0
+- [x] add glGetError checks after shader compilation / texture upload
+- [x] check if XRRGetScreenInfo / XRRConfigCurrentRate needs XFree
+- [x] accept key repeat in shader cycling currently floods on held 't'
+- [x] make --windowed mode remember window position between runs
 
 ## High priority
 
-- [ ] **Wayland backend** full port needed see notes below
-- [ ] screenshot capture ext-image-capture-source or wlr-screencopy
-- [ ] EGL instead of GLX for Wayland
-- [ ] wl_surface + xdg_toplevel instead of XCreateWindow
+Clear
 
 ## Medium priority
 
-- [ ] add glGetError checks after shader compilation / texture upload
-- [ ] make --windowed mode remember window position between runs
+Clear
 
 ## Low priority / icebox
 
-- [ ] check if XRRGetScreenInfo / XRRConfigCurrentRate needs XFree
+- [ ] **Wayland backend** full port needed see notes below
 - [ ] add a --monitor flag to pick which display to capture
 - [ ] refresh_screenshot MITSHM path if new_screenshot fails after destroy image is NULL
-- [ ] accept key repeat in shader cycling currently floods on held 't'
 - [ ] config reload on SIGHUP
 - [ ] maybe switch from XGetImage to a portal-based capture for Wayland compat
+- [ ] screenshot capture ext-image-capture-source or wlr-screencopy
+- [ ] wl_surface + xdg_toplevel instead of XCreateWindow
 
 >[!NOTE]
 >These things probably aren't going to be implemented in the near future

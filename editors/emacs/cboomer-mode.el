@@ -10,7 +10,10 @@
     ("default_shader" . font-lock-keyword-face)
     ("mirror" . font-lock-keyword-face)
     ("flashlight_radius" . font-lock-keyword-face)
-    ("scroll_invert" . font-lock-keyword-face)))
+    ("scroll_invert" . font-lock-keyword-face)
+    ("osd" . font-lock-keyword-face)
+    ("smooth_reset" . font-lock-keyword-face)
+    ("font" . font-lock-keyword-face)))
 
 (defvar cboomer-font-lock-keywords
   `(("#.*$" . font-lock-comment-face)

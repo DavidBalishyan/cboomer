@@ -37,6 +37,10 @@ const Config DEFAULT_CONFIG = {
     .mirror = false,
     .flashlight_radius = 200.0f,
     .scroll_invert = false,
+    .osd = false,
+    .smooth_reset = true,
+    .font = "",
+    .screenshot_dir = "",
 };
 
 Config load_config(const char *file_path) {
@@ -123,6 +127,32 @@ Config load_config(const char *file_path) {
                          strcmp(value, "no") == 0 || strcmp(value, "off") == 0) {
                     config.mirror = false;
               }
+        } else if (strcmp(key, "osd") == 0) {
+              if (strcmp(value, "true") == 0 || strcmp(value, "1") == 0 ||
+                  strcmp(value, "yes") == 0 || strcmp(value, "on") == 0) {
+                    config.osd = true;
+              } else if (strcmp(value, "false") == 0 || strcmp(value, "0") == 0 ||
+                         strcmp(value, "no") == 0 || strcmp(value, "off") == 0) {
+                    config.osd = false;
+              }
+        } else if (strcmp(key, "smooth_reset") == 0) {
+              if (strcmp(value, "true") == 0 || strcmp(value, "1") == 0 ||
+                  strcmp(value, "yes") == 0 || strcmp(value, "on") == 0) {
+                    config.smooth_reset = true;
+              } else if (strcmp(value, "false") == 0 || strcmp(value, "0") == 0 ||
+                         strcmp(value, "no") == 0 || strcmp(value, "off") == 0) {
+                    config.smooth_reset = false;
+              }
+        } else if (strcmp(key, "font") == 0) {
+            if (!quoted) {
+                warn("config line %d: string values should be quoted: `%s`\n", lineno, key);
+            }
+            snprintf(config.font, sizeof(config.font), "%s", value);
+        } else if (strcmp(key, "screenshot_dir") == 0) {
+            if (!quoted) {
+                warn("config line %d: string values should be quoted: `%s`\n", lineno, key);
+            }
+            snprintf(config.screenshot_dir, sizeof(config.screenshot_dir), "%s", value);
         } else if (strcmp(key, "scroll_invert") == 0) {
               if (strcmp(value, "true") == 0 || strcmp(value, "1") == 0 ||
                   strcmp(value, "yes") == 0 || strcmp(value, "on") == 0) {
@@ -198,6 +228,17 @@ void generate_default_config(const char *file_path) {
     fprintf(f, "scale_friction = %.2f\n\n", DEFAULT_CONFIG.scale_friction);
     fprintf(f, "# Invert scroll-to-zoom direction (bool).\n");
     fprintf(f, "scroll_invert = %s\n\n", DEFAULT_CONFIG.scroll_invert ? "true" : "false");
+    fprintf(f, "# Start with on-screen display visible (bool). Shows shader name, zoom level,\n");
+    fprintf(f, "# and FPS. Can be toggled at any time with the 'o' key regardless of this value.\n");
+    fprintf(f, "osd = %s\n\n", DEFAULT_CONFIG.osd ? "true" : "false");
+    fprintf(f, "# Smooth animation when resetting with '0' key (bool).\n");
+    fprintf(f, "smooth_reset = %s\n\n", DEFAULT_CONFIG.smooth_reset ? "true" : "false");
+    fprintf(f, "# Path to a .ttf font file for the OSD (string). Can be a full path or just a\n");
+    fprintf(f, "# font name (e.g. \"DejaVuSans\") to search the system. If not set, auto-detects.\n");
+    fprintf(f, "# font = \"DejaVuSans\"\n\n");
+    fprintf(f, "# Directory to save rendered view screenshots when pressing 's' (string).\n");
+    fprintf(f, "# Supports ~/ expansion. Defaults to ~/Pictures/Screenshots if not set.\n");
+    fprintf(f, "# screenshot_dir = \"~/Pictures/Screenshots\"\n\n");
     fprintf(f, "# Path to save a PPM screenshot on startup (string).\n");
     fprintf(f, "# Supports ~/ and $HOME/ expansion.\n");
     fprintf(f, "ppm_save_path = \"%s\"\n\n", DEFAULT_CONFIG.ppm_save_path);

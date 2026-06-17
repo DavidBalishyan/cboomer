@@ -8,6 +8,23 @@ Vec2f world(Camera camera, Vec2f v) {
 
 void camera_update(Camera *camera, Config config, float dt, Mouse mouse, XImage *image, Vec2f window_size) {
     (void)image;
+
+    if (camera->animating) {
+        camera->anim_t += dt * 2.0f;
+        if (camera->anim_t >= 1.0f) {
+            camera->anim_t = 1.0f;
+            camera->animating = 0;
+        }
+        float t = camera->anim_t;
+        float smooth = t * t * (3.0f - 2.0f * t);
+        camera->position = vec2_add(camera->anim_start_pos,
+            vec2_mul_f(vec2_sub(camera->anim_end_pos, camera->anim_start_pos), smooth));
+        camera->scale = camera->anim_start_scale + (camera->anim_end_scale - camera->anim_start_scale) * smooth;
+        camera->velocity = vec2(0.0f, 0.0f);
+        camera->delta_scale = 0.0;
+        return;
+    }
+
     camera->scale = fmaxf(camera->scale, 0.001f);
 
     if (fabs(camera->delta_scale) > 0.5) {

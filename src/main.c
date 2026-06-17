@@ -25,6 +25,7 @@
 #include "navigation.h"
 #include "screenshot.h"
 #include "shaders.h"
+#include "osd.h"
 
 #ifndef GIT_HASH
 #define GIT_HASH "unknown"
@@ -108,11 +109,90 @@ static void reload_shader(Shader *shader) {
 }
 #endif
 
+static void state_save_pos(const char *dir, Display *display, Window win) {
+    XWindowAttributes wa;
+    if (!XGetWindowAttributes(display, win, &wa)) return;
+    char path[8192];
+    snprintf(path, sizeof(path), "%s/state", dir);
+    FILE *f = fopen(path, "w");
+    if (!f) return;
+    fprintf(f, "win_x = %d\nwin_y = %d\n", wa.x, wa.y);
+    fclose(f);
+}
+
+static int state_load_pos(const char *dir, int *x, int *y) {
+    char path[8192];
+    snprintf(path, sizeof(path), "%s/state", dir);
+    FILE *f = fopen(path, "r");
+    if (!f) return 0;
+    int got = 0;
+    char line[256];
+    while (fgets(line, sizeof(line), f)) {
+        int val;
+        if (sscanf(line, "win_x = %d", &val) == 1) { *x = val; got |= 1; }
+        if (sscanf(line, "win_y = %d", &val) == 1) { *y = val; got |= 2; }
+    }
+    fclose(f);
+    return got == 3;
+}
+
+static void save_view_to_ppm(int w, int h, const char *dir) {
+    char expanded[1024];
+    if (dir[0] == '~' && (dir[1] == '/' || dir[1] == '\0')) {
+        const char *home = getenv("HOME");
+        if (!home) home = ".";
+        snprintf(expanded, sizeof(expanded), "%s%s", home, dir + 1);
+        dir = expanded;
+    }
+
+    time_t now = time(NULL);
+    struct tm *tm = localtime(&now);
+    char fname[256];
+    strftime(fname, sizeof(fname), "cboomer_%Y%m%d_%H%M%S.ppm", tm);
+
+    mkdir(dir, 0755);
+
+    char path[2048];
+    snprintf(path, sizeof(path), "%s/%s", dir, fname);
+
+    unsigned char *pixels = malloc((size_t)w * h * 3);
+    if (!pixels) {
+        fprintf(stderr, "Failed to allocate memory for view save\n");
+        return;
+    }
+    glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+
+    FILE *f = fopen(path, "wb");
+    if (!f) {
+        fprintf(stderr, "Failed to open %s for writing\n", path);
+        free(pixels);
+        return;
+    }
+
+    fprintf(f, "P6\n%d %d\n255\n", w, h);
+    size_t row_bytes = (size_t)w * 3;
+    for (int y = h - 1; y >= 0; y--) {
+        fwrite(pixels + (size_t)y * row_bytes, 1, row_bytes, f);
+    }
+
+    fclose(f);
+    free(pixels);
+    printf("Saved view to %s\n", path);
+}
+
+static void gl_check_error(const char *where) {
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        fprintf(stderr, "GL error 0x%x after %s\n", err, where);
+    }
+}
+
 static GLuint new_shader(Shader shader, GLenum kind) {
     GLuint result = glCreateShader(kind);
     const GLchar *src = shader.content;
     glShaderSource(result, 1, &src, NULL);
     glCompileShader(result);
+    gl_check_error("shader compile");
 
     GLint success;
     glGetShaderiv(result, GL_COMPILE_STATUS, &success);
@@ -135,6 +215,7 @@ static GLuint new_shader_program(Shader vertex, Shader fragment) {
     glAttachShader(program, vs);
     glAttachShader(program, fs);
     glLinkProgram(program);
+    gl_check_error("program link");
 
     glDeleteShader(vs);
     glDeleteShader(fs);
@@ -279,6 +360,7 @@ static void usage(void) {
     fprintf(stderr, "    m                      mirror image horizontally\n");
     fprintf(stderr, "    f                      toggle flashlight\n");
     fprintf(stderr, "    t                      cycle shader modes\n");
+    fprintf(stderr, "    o                      toggle on-screen display\n");
     fprintf(stderr, "    r                      reload config\n");
 #ifdef DEVELOPER
     fprintf(stderr, "    Ctrl+r                 reload shaders from disk\n");
@@ -427,10 +509,17 @@ int main(int argc, char **argv) {
 
     current_shader = config.default_shader;
 
+    int osd_enabled = config.osd;
+
+    int win_x = 0, win_y = 0;
+    if (windowed) {
+        state_load_pos(boomer_dir, &win_x, &win_y);
+    }
+
     printf("Using config: min_scale=%.2f scroll_speed=%.2f drag_friction=%.2f scale_friction=%.2f"
-           " shader=%s mirror=%d\n",
+           " shader=%s mirror=%d osd=%d\n",
            config.min_scale, config.scroll_speed, config.drag_friction, config.scale_friction,
-           shader_names[current_shader], config.mirror);
+           shader_names[current_shader], config.mirror, osd_enabled);
 
     Display *display = XOpenDisplay(NULL);
     if (!display) {
@@ -450,6 +539,7 @@ int main(int argc, char **argv) {
     XRRScreenConfiguration *screen_config = XRRGetScreenInfo(display, DefaultRootWindow(display));
     int rate = XRRConfigCurrentRate(screen_config);
     printf("Screen rate: %d\n", rate);
+    XRRFreeScreenConfigInfo(screen_config);
 
     int screen = DefaultScreen(display);
     int glx_major, glx_minor;
@@ -497,7 +587,7 @@ int main(int argc, char **argv) {
 
     Window win = XCreateWindow(
         display, DefaultRootWindow(display),
-        0, 0, root_attrs.width, root_attrs.height, 0,
+        win_x, win_y, root_attrs.width, root_attrs.height, 0,
         vi->depth, InputOutput, vi->visual,
         CWColormap | CWEventMask | CWOverrideRedirect | CWSaveUnder, &swa);
 
@@ -531,6 +621,10 @@ int main(int argc, char **argv) {
         fragment_shaders[i].content = NULL;
     }
 #endif
+
+    if (!osd_init(config.font)) {
+        fprintf(stderr, "Warning: OSD init failed\n");
+    }
 
     Screenshot screenshot = new_screenshot(display, tracking_window);
     if (!screenshot.image) {
@@ -574,9 +668,11 @@ int main(int argc, char **argv) {
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    gl_check_error("vertex buffer upload");
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    gl_check_error("index buffer upload");
 
     GLsizei stride = (GLsizei)(4 * sizeof(float));
 
@@ -588,11 +684,13 @@ int main(int argc, char **argv) {
 
     GLuint texture;
     glGenTextures(1, &texture);
+    gl_check_error("texture generation");
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, screenshot.image->width, screenshot.image->height,
                  0, GL_BGRA, GL_UNSIGNED_BYTE, screenshot.image->data);
+    gl_check_error("texture upload");
     glGenerateMipmap(GL_TEXTURE_2D);
 
     glUniform1i(glGetUniformLocation(programs[current_shader], "tex"), 0);
@@ -610,9 +708,13 @@ int main(int argc, char **argv) {
     Mouse mouse = { .curr = cursor_pos, .prev = cursor_pos, .drag = 0 };
     Flashlight flashlight = { .is_enabled = 0, .radius = config.flashlight_radius, .shadow = 0.0f, .delta_radius = 0.0f };
     int mirror = config.mirror;
+    int save_view = 0;
     float elapsed = 0.0f;
+    float fps = (float)rate;
 
     float dt = 1.0f / (float)rate;
+    struct timespec prev_ts;
+    clock_gettime(CLOCK_MONOTONIC, &prev_ts);
     Window origin_window;
     int revert_to_return;
     XGetInputFocus(display, &origin_window, &revert_to_return);
@@ -669,10 +771,21 @@ int main(int argc, char **argv) {
                             camera.scale_pivot = mouse.curr;
                         }
                     } else if (key == XK_0) {
-                        camera.scale = 1.0f;
-                        camera.delta_scale = 0.0;
-                        camera.position = vec2(0.0f, 0.0f);
-                        camera.velocity = vec2(0.0f, 0.0f);
+                        if (config.smooth_reset) {
+                            camera.anim_start_pos = camera.position;
+                            camera.anim_start_scale = camera.scale;
+                            camera.anim_end_pos = vec2(0.0f, 0.0f);
+                            camera.anim_end_scale = 1.0f;
+                            camera.anim_t = 0.0f;
+                            camera.animating = 1;
+                            camera.velocity = vec2(0.0f, 0.0f);
+                            camera.delta_scale = 0.0;
+                        } else {
+                            camera.scale = 1.0f;
+                            camera.delta_scale = 0.0;
+                            camera.position = vec2(0.0f, 0.0f);
+                            camera.velocity = vec2(0.0f, 0.0f);
+                        }
                         mirror = 0;
                     } else if (key == XK_q || key == XK_Escape) {
                         quitting = 1;
@@ -684,8 +797,8 @@ int main(int argc, char **argv) {
                             current_shader = config.default_shader;
                             mirror = config.mirror;
                             flashlight.radius = config.flashlight_radius;
-                            printf("Config reloaded: shader=%s mirror=%d scroll_invert=%d\n",
-                                   shader_names[current_shader], mirror, config.scroll_invert);
+                            printf("Config reloaded: shader=%s mirror=%d scroll_invert=%d osd=%d smooth_reset=%d\n",
+                                   shader_names[current_shader], mirror, config.scroll_invert, config.osd, config.smooth_reset);
                         }
 
 #ifdef DEVELOPER
@@ -708,11 +821,21 @@ int main(int argc, char **argv) {
                     } else if (key == XK_m) {
                         camera.position.x += (float)screenshot.image->width / camera.scale - 2.0f * (mouse.curr.x / camera.scale + camera.position.x);
                         mirror = !mirror;
+                    } else if (key == XK_o) {
+                        osd_enabled = !osd_enabled;
+                        printf("OSD: %s\n", osd_enabled ? "on" : "off");
                     } else if (key == XK_f) {
                         flashlight.is_enabled = !flashlight.is_enabled;
                     } else if (key == XK_t) {
-                        current_shader = (current_shader + 1) % SHADER_COUNT;
-                        printf("Shader: %s\n", shader_names[current_shader]);
+                        static Time last_t = 0;
+                        Time now = xev.xkey.time;
+                        if (now - last_t > 200) {
+                            current_shader = (current_shader + 1) % SHADER_COUNT;
+                            printf("Shader: %s\n", shader_names[current_shader]);
+                            last_t = now;
+                        }
+                    } else if (key == XK_s) {
+                        save_view = 1;
                     }
                     break;
                 }
@@ -756,8 +879,30 @@ int main(int argc, char **argv) {
              mouse, flashlight, mirror, elapsed);
         elapsed += dt;
 
+        if (osd_enabled) {
+            float zoom = camera.scale * 100.0f;
+            osd_render(shader_names[current_shader], zoom, fps, vec2((float)wa.width, (float)wa.height));
+        }
+
+        if (save_view) {
+            const char *sd = config.screenshot_dir;
+            if (!sd[0]) sd = "~/Pictures/Screenshots";
+            save_view_to_ppm(wa.width, wa.height, sd);
+            save_view = 0;
+        }
+
         glXSwapBuffers(display, win);
         glFinish();
+
+        {
+            struct timespec curr_ts;
+            clock_gettime(CLOCK_MONOTONIC, &curr_ts);
+            float frame_dt = (float)((curr_ts.tv_sec - prev_ts.tv_sec) + (curr_ts.tv_nsec - prev_ts.tv_nsec) / 1e9);
+            if (frame_dt > 0.001f) {
+                fps = fps * 0.9f + (1.0f / frame_dt) * 0.1f;
+            }
+            prev_ts = curr_ts;
+        }
 
 #ifdef LIVE
         refresh_screenshot(&screenshot, display, tracking_window);
@@ -772,8 +917,10 @@ int main(int argc, char **argv) {
             };
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(new_vertices), new_vertices, GL_STATIC_DRAW);
+            gl_check_error("LIVE vertex buffer upload");
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, screenshot.image->width, screenshot.image->height,
                          0, GL_BGRA, GL_UNSIGNED_BYTE, screenshot.image->data);
+            gl_check_error("LIVE texture upload");
         }
 #endif
     }
@@ -794,6 +941,10 @@ int main(int argc, char **argv) {
     }
 #endif
     destroy_screenshot(screenshot, display);
+    osd_cleanup();
+    if (windowed) {
+        state_save_pos(boomer_dir, display, win);
+    }
     glXDestroyContext(display, glc);
     XDestroyWindow(display, win);
     XCloseDisplay(display);

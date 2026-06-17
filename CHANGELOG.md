@@ -92,3 +92,18 @@ commit: [2f00a47](https://github.com/DavidBalishyan/cboomer/commit/2f00a4773c741
 - **ShaderMode enum moved to config.h** - `shader_names` is now exported so the config parser can match shader names.
 
 commit: [eb7d62c](https://github.com/DavidBalishyan/cboomer/commit/eb7d62cec997f7f65df10e8537d21465a354f369)
+# v1.4.0
+
+- **On-screen display** - `osd` config / `o` key to show shader name, zoom %, and FPS rendered directly on screen using a bitmap font (`src/osd.c`, `src/osd.h`, `src/font8x8.h`).
+- **Smooth reset** - `smooth_reset` config option; when `true`, pressing `0` animates the camera back to origin instead of snapping (`src/navigation.c`).
+- **Configurable font** - `font` config option: specify a full path or just a font name (e.g. `"DejaVuSans"`) to auto-search system font directories; falls back to detecting known paths (`src/config.c`, `src/osd.c`).
+- **OSD shader files** - OSD vertex and fragment shaders moved from hardcoded C strings to `src/shaders/osd_vert.glsl` and `src/shaders/osd_frag.glsl`, processed through `scripts/gen_shaders.sh` at build time (`src/osd.c`, `Makefile`).
+- **GL error checks** - `glGetError` checks after every `glCompileShader`, `glLinkProgram`, `glGenTextures`, `glTexImage2D`, and `glBufferData` call in both `main.c` and `osd.c`.
+- **OSD positioning fix** - truetype text now accounts for font ascent so it doesn't render too close to the top of the window (`src/osd.c`).
+- **Config comment fixes** - `osd` entry now clarifies the 'o' key toggles regardless of the config value; `font` no longer misleadingly claims it has no effect when `osd` is off; default font example is now a font name instead of a full path (`src/config.c`).
+- **Shader cycle key repeat** - holding `t` now throttles to one switch per 200ms instead of flooding through all shaders (`src/main.c`).
+- **XRR memory leak** - `XRRFreeScreenConfigInfo` now frees the `XRRScreenConfiguration` obtained by `XRRGetScreenInfo` (`src/main.c`).
+- **Windowed mode remembers position** - `--windowed` saves the window position to `$HOME/.config/cboomer/state` on exit and restores it on startup (`src/main.c`).
+- **Save view to PPM** - press `s` to save the current rendered view (with shaders applied) to `cboomer_<timestamp>.ppm` via `glReadPixels`; configurable via `screenshot_dir` config key, defaults to `~/Pictures/Screenshots` (`src/main.c`, `src/config.c`, `src/config.h`).
+
+commit: [TODO]

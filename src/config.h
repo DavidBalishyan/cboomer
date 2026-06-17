@@ -38,6 +38,10 @@ typedef struct {
     bool mirror;
     float flashlight_radius;
     bool scroll_invert;
+    bool osd;
+    bool smooth_reset;
+    char font[512];
+    char screenshot_dir[512];
 } Config;
 
 extern const Config DEFAULT_CONFIG;
