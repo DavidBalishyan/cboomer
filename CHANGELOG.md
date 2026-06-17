@@ -72,4 +72,4 @@ commit: [2deaacc](https://github.com/DavidBalishyan/cboomer/commit/2deaaccf86d6a
 - **Added install-deps.sh** - automatically detects distro and installs all build dependencies (`scripts/install-deps.sh`).
 - **Added release.sh** - automates changelog commit-hash replacement, tagging, pushing, and GitHub release creation (`scripts/release.sh`).
 
-commit: [TODO]
+commit: [2f00a47](https://github.com/DavidBalishyan/cboomer/commit/2f00a4773c741ec7e1bf9a45b90ab9888c386767)
