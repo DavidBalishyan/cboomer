@@ -8,30 +8,10 @@ Originally written in [Nim](https://github.com/nim-lang/Nim), this is a C11 rewr
 
 ## Dependencies
 
-Install build dependencies automatically:
+Install build dependencies:
 
 ```console
 $ ./scripts/install-deps.sh
-```
-
-Or manually per-distro below:
-
-### Debian / Ubuntu
-
-```console
-$ sudo apt install libgl1-mesa-dev libx11-dev libxext-dev libxrandr-dev
-```
-
-### Arch
-
-```console
-$ sudo pacman -S mesa libx11 libxext libxrandr
-```
-
-### Fedora
-
-```console
-$ sudo dnf install mesa-libGL-devel libX11-devel libXext-devel libXrandr-devel
 ```
 
 
@@ -60,6 +40,16 @@ Multiple flags can be combined:
 ```console
 $ make dev live mitshm select
 ```
+
+## Scripts
+
+| Script | Description |
+|---|---|
+| `scripts/install-deps.sh` | Install build dependencies (auto-detects distro) |
+| `scripts/shader.sh` | Scaffold or remove a fragment shader (`help` for usage) |
+| `scripts/lint.sh` | Run static analysis via cppcheck or clang-tidy |
+| `scripts/release.sh` | Tag, push, and create a GitHub release from CHANGELOG |
+| `scripts/gen_shaders.sh` | Generate `build/shaders.h` from `.glsl` files (called by Makefile) |
 
 ## Controls
 
@@ -168,5 +158,5 @@ When built with `make dev`, pressing Ctrl+r at runtime re-reads all `.glsl` file
 
 ## License
 
-[MIT](https://opensource.org/license/MIT)
+[GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0.html)
 See the [LICENSE](LICENSE) file
