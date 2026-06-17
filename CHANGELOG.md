@@ -91,4 +91,4 @@ commit: [2f00a47](https://github.com/DavidBalishyan/cboomer/commit/2f00a4773c741
 - **scroll_invert config option** - invert scroll-to-zoom direction (`src/config.c`).
 - **ShaderMode enum moved to config.h** - `shader_names` is now exported so the config parser can match shader names.
 
-commit: [TODO]
+commit: [eb7d62c](https://github.com/DavidBalishyan/cboomer/commit/eb7d62cec997f7f65df10e8537d21465a354f369)
