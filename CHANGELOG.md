@@ -118,4 +118,4 @@ commit: [39f1496](https://github.com/DavidBalishyan/cboomer/commit/39f14961a3026
 - **`screenshot_format` config option** - choose `"ppm"` or `"png"` for `s` key saves. PNG writer uses zlib to produce standard PNG files.
 - **Keyboard panning** - arrow keys, vi-style `h`/`j`/`k`/`l`, and Emacs-style `Ctrl`+`f`/`b`/`n`/`p` pan the image with momentum.
 
-commit: [TODO]
+commit: [8c27209](https://github.com/DavidBalishyan/cboomer/commit/8c2720968b69082a3d01d1ca56bc2b0499770c21)
