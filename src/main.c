@@ -157,14 +157,14 @@ static void save_view_to_ppm(int w, int h, const char *dir) {
 
     unsigned char *pixels = malloc((size_t)w * h * 3);
     if (!pixels) {
-        fprintf(stderr, "Failed to allocate memory for view save\n");
+        err("Failed to allocate memory for view save\n");
         return;
     }
     glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 
     FILE *f = fopen(path, "wb");
     if (!f) {
-        fprintf(stderr, "Failed to open %s for writing\n", path);
+        err("Failed to open %s for writing\n", path);
         free(pixels);
         return;
     }
@@ -181,9 +181,9 @@ static void save_view_to_ppm(int w, int h, const char *dir) {
 }
 
 static void gl_check_error(const char *where) {
-    GLenum err;
-    while ((err = glGetError()) != GL_NO_ERROR) {
-        fprintf(stderr, "GL error 0x%x after %s\n", err, where);
+    GLenum gle;
+    while ((gle = glGetError()) != GL_NO_ERROR) {
+        err("GL error 0x%x after %s\n", gle, where);
     }
 }
 
@@ -503,7 +503,7 @@ int main(int argc, char **argv) {
             fclose(check);
             config = load_config(config_file);
         } else {
-            fprintf(stderr, "%s doesn't exist. Using default values.\n", config_file);
+            warn("%s doesn't exist. Using default values.\n", config_file);
         }
     }
 
@@ -623,7 +623,7 @@ int main(int argc, char **argv) {
 #endif
 
     if (!osd_init(config.font)) {
-        fprintf(stderr, "Warning: OSD init failed\n");
+        warn("OSD init failed\n");
     }
 
     Screenshot screenshot = new_screenshot(display, tracking_window);

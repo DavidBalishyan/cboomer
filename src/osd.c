@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <GL/gl.h>
+#include "config.h"
 #include "osd.h"
 #include "font8x8.h"
 #include "stb_truetype.h"
@@ -21,9 +22,9 @@ static int tt_font_size = 24;
 static float tt_ascent = 0;
 
 static void gl_check_error(const char *where) {
-    GLenum err;
-    while ((err = glGetError()) != GL_NO_ERROR) {
-        fprintf(stderr, "GL error 0x%x after %s\n", err, where);
+    GLenum gle;
+    while ((gle = glGetError()) != GL_NO_ERROR) {
+        err("GL error 0x%x after %s\n", gle, where);
     }
 }
 
@@ -37,7 +38,7 @@ static GLuint compile_shader(const char *src, GLenum kind) {
     if (!ok) {
         char log[512];
         glGetShaderInfoLog(shader, sizeof(log), NULL, log);
-        fprintf(stderr, "OSD shader compile error: %s\n", log);
+        err("OSD shader compile error: %s\n", log);
     }
     return shader;
 }
@@ -232,7 +233,7 @@ int osd_init(const char *font_path) {
     if (!ok) {
         char log[512];
         glGetProgramInfoLog(osd_program, sizeof(log), NULL, log);
-        fprintf(stderr, "OSD program link error: %s\n", log);
+        err("OSD program link error: %s\n", log);
         return 0;
     }
     glDeleteShader(vs);
@@ -242,7 +243,7 @@ int osd_init(const char *font_path) {
         use_truetype = 1;
     } else {
         use_truetype = 0;
-        fprintf(stderr, "OSD: truetype font not found, using built-in 8x8 font\n");
+        warn("OSD: truetype font not found, using built-in 8x8 font\n");
 
         unsigned char tex[1024 * 8];
         memset(tex, 0, sizeof(tex));
