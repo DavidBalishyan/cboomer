@@ -195,10 +195,9 @@ When built with `make dev`, pressing Ctrl+r at runtime re-reads all `.glsl` file
 
 ## Editor Support
 
-Syntax highlighting for the config file is available:
+See [`editors/README.md`](editors/README.md) for install instructions.
 
-- **Vim**: `editors/vim/cboomer.vim` - copy to `~/.vim/syntax/` and add `au BufRead,BufNewFile */cboomer/config setfiletype cboomer` to your vimrc (or use `editors/vim/ftdetect.vim` in `~/.vim/ftdetect/`).
-- **Emacs**: `editors/emacs/cboomer-mode.el` - load and it auto-detects files named `cboomer/config`.
+Syntax highlighting for the config file is available for **Vim** (`editors/vim/cboomer.vim`) and **Emacs** (`editors/emacs/cboomer-mode.el`). Both highlight keys, strings, numbers, booleans, and comments.
 
 ## Credits
 
@@ -212,6 +211,7 @@ Syntax highlighting for the config file is available:
 - <https://perldoc.perl.org>
 - <https://www.python.org>
 - <https://ninja-build.org/manual.html>
+- <https://netpbm.sourceforge.net/doc/ppm.html>
 
 ## License
 
