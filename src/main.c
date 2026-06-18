@@ -10,6 +10,7 @@
 #include <time.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <zlib.h>
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -136,7 +137,7 @@ static int state_load_pos(const char *dir, int *x, int *y) {
     return got == 3;
 }
 
-static void save_view_to_ppm(int w, int h, const char *dir) {
+static void save_view_to_file(int w, int h, const char *dir, const char *fmt) {
     char expanded[1024];
     if (dir[0] == '~' && (dir[1] == '/' || dir[1] == '\0')) {
         const char *home = getenv("HOME");
@@ -148,7 +149,10 @@ static void save_view_to_ppm(int w, int h, const char *dir) {
     time_t now = time(NULL);
     struct tm *tm = localtime(&now);
     char fname[256];
-    strftime(fname, sizeof(fname), "cboomer_%Y%m%d_%H%M%S.ppm", tm);
+    int is_png = (strcmp(fmt, "png") == 0);
+    strftime(fname, sizeof(fname),
+             is_png ? "cboomer_%Y%m%d_%H%M%S.png"
+                    : "cboomer_%Y%m%d_%H%M%S.ppm", tm);
 
     mkdir(dir, 0755);
 
@@ -162,20 +166,111 @@ static void save_view_to_ppm(int w, int h, const char *dir) {
     }
     glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 
-    FILE *f = fopen(path, "wb");
-    if (!f) {
-        err("Failed to open %s for writing\n", path);
-        free(pixels);
-        return;
+    if (is_png) {
+        FILE *f = fopen(path, "wb");
+        if (!f) {
+            err("Failed to open %s for writing\n", path);
+            free(pixels);
+            return;
+        }
+
+        unsigned char sig[] = {0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'};
+        fwrite(sig, 1, 8, f);
+
+        unsigned char ihdr[13] = {
+            (unsigned char)(w >> 24), (unsigned char)(w >> 16),
+            (unsigned char)(w >> 8),  (unsigned char)w,
+            (unsigned char)(h >> 24), (unsigned char)(h >> 16),
+            (unsigned char)(h >> 8),  (unsigned char)h,
+            8, 2, 0, 0, 0
+        };
+        unsigned long crc = crc32(0, Z_NULL, 0);
+        unsigned char len_buf[4];
+        unsigned char type[] = "IHDR";
+        len_buf[0] = 0; len_buf[1] = 0; len_buf[2] = 0; len_buf[3] = 13;
+        fwrite(len_buf, 1, 4, f);
+        fwrite(type, 1, 4, f);
+        crc = crc32(crc, type, 4);
+        fwrite(ihdr, 1, 13, f);
+        crc = crc32(crc, ihdr, 13);
+        len_buf[0] = (unsigned char)(crc >> 24);
+        len_buf[1] = (unsigned char)(crc >> 16);
+        len_buf[2] = (unsigned char)(crc >> 8);
+        len_buf[3] = (unsigned char)crc;
+        fwrite(len_buf, 1, 4, f);
+
+        size_t row_bytes = (size_t)w * 3;
+        size_t raw_size = (row_bytes + 1) * h;
+        unsigned char *raw = malloc(raw_size);
+        if (!raw) {
+            fclose(f);
+            free(pixels);
+            return;
+        }
+        for (int y = 0; y < h; y++) {
+            int src_y = h - 1 - y;
+            raw[y * (row_bytes + 1)] = 0;
+            memcpy(raw + y * (row_bytes + 1) + 1,
+                   pixels + (size_t)src_y * row_bytes, row_bytes);
+        }
+
+        uLongf compressed_size = compressBound(raw_size);
+        unsigned char *compressed = malloc(compressed_size);
+        if (!compressed) {
+            free(raw);
+            fclose(f);
+            free(pixels);
+            return;
+        }
+        compress(compressed, &compressed_size, raw, raw_size);
+
+        crc = crc32(0, Z_NULL, 0);
+        unsigned char type2[] = "IDAT";
+        len_buf[0] = (unsigned char)(compressed_size >> 24);
+        len_buf[1] = (unsigned char)(compressed_size >> 16);
+        len_buf[2] = (unsigned char)(compressed_size >> 8);
+        len_buf[3] = (unsigned char)compressed_size;
+        fwrite(len_buf, 1, 4, f);
+        fwrite(type2, 1, 4, f);
+        crc = crc32(crc, type2, 4);
+        fwrite(compressed, 1, compressed_size, f);
+        crc = crc32(crc, compressed, (unsigned)compressed_size);
+        len_buf[0] = (unsigned char)(crc >> 24);
+        len_buf[1] = (unsigned char)(crc >> 16);
+        len_buf[2] = (unsigned char)(crc >> 8);
+        len_buf[3] = (unsigned char)crc;
+        fwrite(len_buf, 1, 4, f);
+
+        crc = crc32(0, Z_NULL, 0);
+        unsigned char type3[] = "IEND";
+        len_buf[0] = 0; len_buf[1] = 0; len_buf[2] = 0; len_buf[3] = 0;
+        fwrite(len_buf, 1, 4, f);
+        fwrite(type3, 1, 4, f);
+        crc = crc32(crc, type3, 4);
+        len_buf[0] = (unsigned char)(crc >> 24);
+        len_buf[1] = (unsigned char)(crc >> 16);
+        len_buf[2] = (unsigned char)(crc >> 8);
+        len_buf[3] = (unsigned char)crc;
+        fwrite(len_buf, 1, 4, f);
+
+        free(compressed);
+        free(raw);
+        fclose(f);
+    } else {
+        FILE *f = fopen(path, "wb");
+        if (!f) {
+            err("Failed to open %s for writing\n", path);
+            free(pixels);
+            return;
+        }
+        fprintf(f, "P6\n%d %d\n255\n", w, h);
+        size_t row_bytes = (size_t)w * 3;
+        for (int y = h - 1; y >= 0; y--) {
+            fwrite(pixels + (size_t)y * row_bytes, 1, row_bytes, f);
+        }
+        fclose(f);
     }
 
-    fprintf(f, "P6\n%d %d\n255\n", w, h);
-    size_t row_bytes = (size_t)w * 3;
-    for (int y = h - 1; y >= 0; y--) {
-        fwrite(pixels + (size_t)y * row_bytes, 1, row_bytes, f);
-    }
-
-    fclose(f);
     free(pixels);
     printf("Saved view to %s\n", path);
 }
@@ -357,6 +452,8 @@ static void usage(void) {
     fprintf(stderr, "    q / Esc                quit\n");
     fprintf(stderr, "    0                      reset position, scale, mirror\n");
     fprintf(stderr, "    = / -                  zoom in / out\n");
+    fprintf(stderr, "    arrows / h/j/k/l       pan image\n");
+    fprintf(stderr, "    Ctrl+f/b/n/p           pan image (small step)\n");
     fprintf(stderr, "    m                      mirror image horizontally\n");
     fprintf(stderr, "    f                      toggle flashlight\n");
     fprintf(stderr, "    t                      cycle shader modes\n");
@@ -824,8 +921,40 @@ int main(int argc, char **argv) {
                     } else if (key == XK_o) {
                         osd_enabled = !osd_enabled;
                         printf("OSD: %s\n", osd_enabled ? "on" : "off");
-                    } else if (key == XK_f) {
+                    } else if (!ctrl && key == XK_f) {
                         flashlight.is_enabled = !flashlight.is_enabled;
+                    } else if (ctrl && key == XK_f) {
+                        float pan = PAN_SPEED / (3.0f * fmaxf(camera.scale, 0.001f));
+                        camera.position.x += pan;
+                        camera.velocity.x = pan * fps;
+                    } else if (ctrl && key == XK_b) {
+                        float pan = PAN_SPEED / (3.0f * fmaxf(camera.scale, 0.001f));
+                        camera.position.x -= pan;
+                        camera.velocity.x = -pan * fps;
+                    } else if (ctrl && key == XK_n) {
+                        float pan = PAN_SPEED / (3.0f * fmaxf(camera.scale, 0.001f));
+                        camera.position.y += pan;
+                        camera.velocity.y = pan * fps;
+                    } else if (ctrl && key == XK_p) {
+                        float pan = PAN_SPEED / (3.0f * fmaxf(camera.scale, 0.001f));
+                        camera.position.y -= pan;
+                        camera.velocity.y = -pan * fps;
+                    } else if (key == XK_Left || (!ctrl && key == XK_h)) {
+                        float pan = PAN_SPEED / fmaxf(camera.scale, 0.001f);
+                        camera.position.x -= pan;
+                        camera.velocity.x = -pan * fps;
+                    } else if (key == XK_Right || (!ctrl && key == XK_l)) {
+                        float pan = PAN_SPEED / fmaxf(camera.scale, 0.001f);
+                        camera.position.x += pan;
+                        camera.velocity.x = pan * fps;
+                    } else if (key == XK_Up || (!ctrl && key == XK_k)) {
+                        float pan = PAN_SPEED / fmaxf(camera.scale, 0.001f);
+                        camera.position.y -= pan;
+                        camera.velocity.y = -pan * fps;
+                    } else if (key == XK_Down || (!ctrl && key == XK_j)) {
+                        float pan = PAN_SPEED / fmaxf(camera.scale, 0.001f);
+                        camera.position.y += pan;
+                        camera.velocity.y = pan * fps;
                     } else if (key == XK_t) {
                         static Time last_t = 0;
                         Time now = xev.xkey.time;
@@ -887,7 +1016,7 @@ int main(int argc, char **argv) {
         if (save_view) {
             const char *sd = config.screenshot_dir;
             if (!sd[0]) sd = "~/Pictures/Screenshots";
-            save_view_to_ppm(wa.width, wa.height, sd);
+            save_view_to_file(wa.width, wa.height, sd, config.screenshot_format);
             save_view = 0;
         }
 

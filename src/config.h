@@ -42,6 +42,7 @@ typedef struct {
     bool smooth_reset;
     char font[512];
     char screenshot_dir[512];
+    char screenshot_format[8];
 } Config;
 
 extern const Config DEFAULT_CONFIG;

@@ -93,12 +93,21 @@ TEMPLATE
         echo "Commands:"
         echo "  new <name>     Scaffold a new fragment shader"
         echo "  remove <name>  Remove a fragment shader"
+        echo "  ls|list        List all fragment shaders"
         echo ""
         echo "'new' creates src/shaders/frag_<name>.glsl from a template,"
-        echo "registers it in the Makefile, gen_shaders.sh, and adds a"
+        echo "registers it in the Makefile and gen_shaders.sh, and adds a"
         echo "placeholder in the README shader table."
         echo ""
         echo "'remove' deletes the file and reverts those changes."
+        ;;
+    ls|list)
+        for f in src/shaders/frag_*.glsl; do
+            [ -f "$f" ] || continue
+            basename="${f#src/shaders/frag_}"
+            basename="${basename%.glsl}"
+            echo "$basename"
+        done
         ;;
     *)
         echo "Unknown command: $CMD"

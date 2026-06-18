@@ -1,3 +1,8 @@
 build/
 cboomer
 *.ppm
+*.png
+
+# Ninja
+.ninja_log
+build.ninja

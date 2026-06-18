@@ -6,6 +6,7 @@
 #include "config.h"
 
 #define VELOCITY_THRESHOLD 15.0f
+#define PAN_SPEED 15.0f
 
 typedef struct {
     Vec2f curr;

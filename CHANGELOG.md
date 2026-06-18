@@ -107,3 +107,15 @@ commit: [eb7d62c](https://github.com/DavidBalishyan/cboomer/commit/eb7d62cec997f
 - **Save view to PPM** - press `s` to save the current rendered view (with shaders applied) to `cboomer_<timestamp>.ppm` via `glReadPixels`; configurable via `screenshot_dir` config key, defaults to `~/Pictures/Screenshots` (`src/main.c`, `src/config.c`, `src/config.h`).
 
 commit: [39f1496](https://github.com/DavidBalishyan/cboomer/commit/39f14961a30260109247298ad073219f6688947d)
+
+# v1.4.1
+
+- **Experimental Ninja build support** - `scripts/experimental/generate.pl` and `scripts/experimental/generate.py` generate a `build.ninja` that produces the same binary as `make`. Ninja provides parallel builds, automatic header dependency tracking via `.d` files, and faster incremental rebuilds.
+    - Usage: `perl scripts/experimental/generate.pl [--dev] [--live] [--mitshm] [--select]` then `ninja`
+    - Feature flags work the same as Make variants
+    - The primary build system remains Make; this is experimental
+- **`scripts/shader.sh ls`** command to list all fragment shaders.
+- **`screenshot_format` config option** - choose `"ppm"` or `"png"` for `s` key saves. PNG writer uses zlib to produce standard PNG files.
+- **Keyboard panning** - arrow keys, vi-style `h`/`j`/`k`/`l`, and Emacs-style `Ctrl`+`f`/`b`/`n`/`p` pan the image with momentum.
+
+commit: [TODO]

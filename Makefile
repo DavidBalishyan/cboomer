@@ -1,6 +1,6 @@
 CC ?= gcc
 CFLAGS ?= -Wall -Wextra -pedantic -std=c11 -O2 -g
-LDLIBS = -lX11 -lXrandr -lXext -lGL -lm
+LDLIBS = -lX11 -lXrandr -lXext -lGL -lm -lz
 PREFIX ?= /usr/local
 
 BUILD := build

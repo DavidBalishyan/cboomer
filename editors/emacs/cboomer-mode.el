@@ -14,7 +14,8 @@
     ("osd" . font-lock-keyword-face)
     ("smooth_reset" . font-lock-keyword-face)
     ("font" . font-lock-keyword-face)
-    ("screenshot_dir" . font-lock-keyword-face)))
+    ("screenshot_dir" . font-lock-keyword-face)
+    ("screenshot_format" . font-lock-keyword-face)))
 
 (defvar cboomer-font-lock-keywords
   `(("#.*$" . font-lock-comment-face)

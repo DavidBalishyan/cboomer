@@ -19,6 +19,7 @@ syntax keyword cboomerKey
     \ smooth_reset
     \ font
     \ screenshot_dir
+    \ screenshot_format
 
 syntax match cboomerOperator "="
 

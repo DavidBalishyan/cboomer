@@ -9,4 +9,4 @@ int osd_init(const char *font_path);
 void osd_render(const char *shader_name, float zoom, float fps, Vec2f window_size);
 void osd_cleanup(void);
 
-#endif
+#endif // OSD_H_

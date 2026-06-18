@@ -41,6 +41,24 @@ Multiple flags can be combined:
 $ make dev live mitshm select
 ```
 
+### Experimental: Ninja build
+>[!NOTE]
+>See more at [scripts/experimental/README.md](scripts/experimental/README.md)
+
+[Ninja](https://ninja-build.org/) build files can be generated for faster incremental builds and automatic header dependency tracking:
+
+```console
+# Perl (no extra dependencies)
+$ perl scripts/experimental/generate.pl [--dev] [--live] [--mitshm] [--select]
+$ ninja
+
+# Python
+$ python3 scripts/experimental/generate.py [--dev] [--live] [--mitshm] [--select]
+$ ninja
+```
+
+Same feature flags as `make`. The primary build system is still Make; **this is experimental**.
+
 ## Scripts
 
 | Script | Description |
@@ -50,6 +68,8 @@ $ make dev live mitshm select
 | `scripts/lint.sh` | Run static analysis via cppcheck or clang-tidy |
 | `scripts/release.sh` | Tag, push, and create a GitHub release from CHANGELOG |
 | `scripts/gen_shaders.sh` | Generate `build/shaders.h` from `.glsl` files (called by Makefile) |
+| `scripts/experimental/generate.pl` | Generate `build.ninja` (experimental, Perl) |
+| `scripts/experimental/generate.py` | Generate `build.ninja` (experimental, Python) |
 
 ## Controls
 
@@ -59,13 +79,15 @@ $ make dev live mitshm select
 | Scroll wheel | Zoom in / out |
 | `=` / `-` | Zoom in / out |
 | `0` | Reset position, scale, velocity, and mirror (smoothly if `smooth_reset` is enabled) |
+| `←` `→` `↑` `↓` / `h` `j` `k` `l` | Pan image |
+| `Ctrl`+`f`/`b`/`n`/`p` | Pan image (small step, Emacs-style) |
 | `o` | Toggle on-screen display (shader, zoom, FPS) |
 | `q` / `Esc` | Quit |
 | `r` | Reload configuration file |
 | `m` | Mirror the image horizontally |
 | `f` | Toggle flashlight effect |
 | `t` | Cycle shader: Normal, Invert, CRT, Grayscale, Edge, VHS Glitch, Distortion, Zoom Blur, Posterize, Pixelate, Sepia, Emboss |
-| `s` | Save current view (with shaders applied) to `cboomer_<timestamp>.ppm` |
+| `s` | Save current view (with shaders applied) to `cboomer_<timestamp>.ppm` or `.png` (see `screenshot_format`) |
 | `Ctrl` + scroll / `+` / `-` | Adjust flashlight radius (when flashlight is on) |
 | `Ctrl` + `r` | Reload shaders from disk (developer build only) |
 
@@ -132,6 +154,7 @@ Lines starting with `#` and inline comments after `#` are ignored. Boolean value
 | `smooth_reset` | `true` | Smooth animation when resetting with `0` |
 | `font` | *(auto-detect)* | Path to a .ttf/.otf font for the OSD (full path or font name to search system); empty means auto-detect |
 | `screenshot_dir` | `~/Pictures/Screenshots` | Directory for rendered view saves (press `s`); supports `~/` expansion |
+| `screenshot_format` | `"ppm"` | Image format for `s` key saves: `"ppm"` or `"png"` |
 
 ## How It Works
 
@@ -186,6 +209,9 @@ Syntax highlighting for the config file is available:
 - [OpenGL documentation](https://docs.gl)
 - [Elisp documentation](https://emacsdocs.org/docs/elisp/Emacs-Lisp)
 - [Vimscript page](https://vimhelp.org/usr_41.txt.html)
+- <https://perldoc.perl.org>
+- <https://www.python.org>
+- <https://ninja-build.org/manual.html>
 
 ## License
 

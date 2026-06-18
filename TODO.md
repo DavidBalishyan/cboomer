@@ -40,6 +40,8 @@
 - [x] check if XRRGetScreenInfo / XRRConfigCurrentRate needs XFree
 - [x] accept key repeat in shader cycling currently floods on held 't'
 - [x] make --windowed mode remember window position between runs
+- [x] add screenshot_format config option for PNG saves
+- [x] keyboard panning with arrows, vi keys (h/j/k/l), emacs keys (C-f/b/n/p)
 
 ## High priority
 

@@ -41,6 +41,7 @@ const Config DEFAULT_CONFIG = {
     .smooth_reset = true,
     .font = "",
     .screenshot_dir = "",
+    .screenshot_format = "ppm",
 };
 
 Config load_config(const char *file_path) {
@@ -153,6 +154,11 @@ Config load_config(const char *file_path) {
                 warn("config line %d: string values should be quoted: `%s`\n", lineno, key);
             }
             snprintf(config.screenshot_dir, sizeof(config.screenshot_dir), "%s", value);
+        } else if (strcmp(key, "screenshot_format") == 0) {
+            if (!quoted) {
+                warn("config line %d: string values should be quoted: `%s`\n", lineno, key);
+            }
+            snprintf(config.screenshot_format, sizeof(config.screenshot_format), "%s", value);
         } else if (strcmp(key, "scroll_invert") == 0) {
               if (strcmp(value, "true") == 0 || strcmp(value, "1") == 0 ||
                   strcmp(value, "yes") == 0 || strcmp(value, "on") == 0) {
@@ -251,6 +257,8 @@ void generate_default_config(const char *file_path) {
     fprintf(f, "# Start with mirror mode enabled (bool).\n");
     fprintf(f, "mirror = %s\n\n", DEFAULT_CONFIG.mirror ? "true" : "false");
     fprintf(f, "# Initial flashlight radius in pixels (float).\n");
-    fprintf(f, "flashlight_radius = %.1f\n", DEFAULT_CONFIG.flashlight_radius);
+    fprintf(f, "flashlight_radius = %.1f\n\n", DEFAULT_CONFIG.flashlight_radius);
+    fprintf(f, "# Image format for 's' key saves (string). \"ppm\" or \"png\".\n");
+    fprintf(f, "screenshot_format = \"%s\"\n", DEFAULT_CONFIG.screenshot_format);
     fclose(f);
 }
