@@ -126,4 +126,4 @@ commit: [8c27209](https://github.com/DavidBalishyan/cboomer/commit/8c2720968b690
 - **Zoom presets** - keys `1` through `5` instantly jump to zoom levels 1x (100%), 2x (200%), 4x (400%), 8x (800%), and 16x (1600%). Uses the existing smooth animation system when `smooth_reset` is enabled.
 - **Rotation** - press `Ctrl+[` to rotate 90 degrees counter-clockwise, `Ctrl+]` to rotate 90 degrees clockwise. Cycles through 0/90/180/270 degrees. Works by remapping texture coordinates per-vertex and re-uploading the VBO.
 
-commit: [TODO]
+commit: [3f498b7](https://github.com/DavidBalishyan/cboomer/commit/3f498b7682a90811fd46987279fa63dd4efff26c)
