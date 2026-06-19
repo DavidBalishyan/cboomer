@@ -274,12 +274,13 @@ int osd_init(const char *font_path) {
     return 1;
 }
 
-#define OSD_MAX_CHARS 256
+#define OSD_MAX_CHARS 384
 
-void osd_render(const char *shader_name, float zoom, float fps, Vec2f window_size) {
+void osd_render(const char *shader_name, float zoom, float fps, Vec2f window_size,
+                int color_r, int color_g, int color_b, int color_valid) {
     if (!osd_program) return;
 
-    char lines[3][64];
+    char lines[4][64];
     int nlines = 0;
     if (shader_name) {
         snprintf(lines[nlines], sizeof(lines[nlines]), "Shader: %s", shader_name);
@@ -289,6 +290,11 @@ void osd_render(const char *shader_name, float zoom, float fps, Vec2f window_siz
     nlines++;
     snprintf(lines[nlines], sizeof(lines[nlines]), "FPS: %.0f", fps);
     nlines++;
+    if (color_valid) {
+        snprintf(lines[nlines], sizeof(lines[nlines]), "Color: rgb(%d, %d, %d) #%02X%02X%02X",
+                 color_r, color_g, color_b, color_r, color_g, color_b);
+        nlines++;
+    }
 
     int total_chars = 0;
     for (int i = 0; i < nlines; i++) {

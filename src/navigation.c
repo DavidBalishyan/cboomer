@@ -6,6 +6,19 @@ Vec2f world(Camera camera, Vec2f v) {
     return vec2_div_f(v, s);
 }
 
+Vec2f screen_to_screenshot(Vec2f screen_pos, Vec2f window_size, Vec2f screenshot_size, Camera camera) {
+    float s = fmaxf(camera.scale, 0.001f);
+    float ndc_x = screen_pos.x / window_size.x * 2.0f - 1.0f;
+    float ndc_y = 1.0f - screen_pos.y / window_size.y * 2.0f;
+    float ratio_x = window_size.x / screenshot_size.x / s;
+    float ratio_y = window_size.y / screenshot_size.y / s;
+    float v_x = (ndc_x * ratio_x + 1.0f) * 0.5f * screenshot_size.x;
+    float v_y = (ndc_y * ratio_y + 1.0f) * 0.5f * screenshot_size.y;
+    float sx = v_x + camera.position.x;
+    float sy = screenshot_size.y - (v_y - camera.position.y);
+    return vec2(sx, sy);
+}
+
 void camera_update(Camera *camera, Config config, float dt, Mouse mouse, XImage *image, Vec2f window_size) {
     (void)image;
 

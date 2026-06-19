@@ -79,9 +79,10 @@ Same feature flags as `make`. The primary build system is still Make; **this is 
 | Scroll wheel | Zoom in / out |
 | `=` / `-` | Zoom in / out |
 | `0` | Reset position, scale, velocity, and mirror (smoothly if `smooth_reset` is enabled) |
+| `1` `2` `3` `4` `5` | Zoom presets: 100%, 200%, 400%, 800%, 1600% (smooth when `smooth_reset` is enabled) |
 | `←` `→` `↑` `↓` / `h` `j` `k` `l` | Pan image |
 | `Ctrl`+`f`/`b`/`n`/`p` | Pan image (small step, Emacs-style) |
-| `o` | Toggle on-screen display (shader, zoom, FPS) |
+| `o` | Toggle on-screen display (shader, zoom, FPS, color under cursor) |
 | `q` / `Esc` | Quit |
 | `r` | Reload configuration file |
 | `m` | Mirror the image horizontally |
@@ -89,6 +90,7 @@ Same feature flags as `make`. The primary build system is still Make; **this is 
 | `t` | Cycle shader: Normal, Invert, CRT, Grayscale, Edge, VHS Glitch, Distortion, Zoom Blur, Posterize, Pixelate, Sepia, Emboss |
 | `s` | Save current view (with shaders applied) to `cboomer_<timestamp>.ppm` or `.png` (see `screenshot_format`) |
 | `Ctrl` + scroll / `+` / `-` | Adjust flashlight radius (when flashlight is on) |
+| `Ctrl` + `[` / `]` | Rotate image 90 degrees counter-clockwise / clockwise |
 | `Ctrl` + `r` | Reload shaders from disk (developer build only) |
 
 ## Command-Line Options

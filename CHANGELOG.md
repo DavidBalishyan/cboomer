@@ -119,3 +119,11 @@ commit: [39f1496](https://github.com/DavidBalishyan/cboomer/commit/39f14961a3026
 - **Keyboard panning** - arrow keys, vi-style `h`/`j`/`k`/`l`, and Emacs-style `Ctrl`+`f`/`b`/`n`/`p` pan the image with momentum.
 
 commit: [8c27209](https://github.com/DavidBalishyan/cboomer/commit/8c2720968b69082a3d01d1ca56bc2b0499770c21)
+
+# v1.4.2
+
+- **Color picker on OSD** - when the on-screen display is visible, it now shows the RGB values and hex code of the pixel under the cursor (`Color: rgb(255, 128, 64) #FF8040`). Reads directly from the captured XImage data (unmodified by shaders) for accurate color picking.
+- **Zoom presets** - keys `1` through `5` instantly jump to zoom levels 1x (100%), 2x (200%), 4x (400%), 8x (800%), and 16x (1600%). Uses the existing smooth animation system when `smooth_reset` is enabled.
+- **Rotation** - press `Ctrl+[` to rotate 90 degrees counter-clockwise, `Ctrl+]` to rotate 90 degrees clockwise. Cycles through 0/90/180/270 degrees. Works by remapping texture coordinates per-vertex and re-uploading the VBO.
+
+commit: [TODO]

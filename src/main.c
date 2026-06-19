@@ -431,6 +431,19 @@ static int x_error_handler(Display *display, XErrorEvent *error) {
     return 0;
 }
 
+static void build_vertices(float w, float h, int rotation, float *verts) {
+    float pos[8] = { w, 0, w, h, 0, h, 0, 0 };
+    float base_u[4] = {1.0f, 1.0f, 0.0f, 0.0f};
+    float base_v[4] = {1.0f, 0.0f, 0.0f, 1.0f};
+    for (int i = 0; i < 4; i++) {
+        int src = (i + rotation) % 4;
+        verts[i*4+0] = pos[i*2+0];
+        verts[i*4+1] = pos[i*2+1];
+        verts[i*4+2] = base_u[src];
+        verts[i*4+3] = base_v[src];
+    }
+}
+
 static void usage(void) {
     fprintf(stderr, "cboomer  -  fullscreen screenshot viewer\n\n");
 
@@ -451,6 +464,8 @@ static void usage(void) {
     fprintf(stderr, "  Keys\n");
     fprintf(stderr, "    q / Esc                quit\n");
     fprintf(stderr, "    0                      reset position, scale, mirror\n");
+    fprintf(stderr, "    1/2/3/4/5             zoom presets 100/200/400/800/1600%%\n");
+    fprintf(stderr, "    Ctrl+[/]              rotate image 90 degrees CCW/CW\n");
     fprintf(stderr, "    = / -                  zoom in / out\n");
     fprintf(stderr, "    arrows / h/j/k/l       pan image\n");
     fprintf(stderr, "    Ctrl+f/b/n/p           pan image (small step)\n");
@@ -481,6 +496,7 @@ static void usage(void) {
 }
 
 int main(int argc, char **argv) {
+    printf("__STDC__VERSION__: %ld\n", __STDC_VERSION__);
     const char *home = getenv("HOME");
     if (!home) home = ".";
 
@@ -748,13 +764,9 @@ int main(int argc, char **argv) {
     float h = (float)screenshot.image->height;
 
     GLuint vao, vbo, ebo;
-    float vertices[] = {
-        /* Position        Texture coords */
-        w,    0.0f, 1.0f, 1.0f, /* Top right */
-        w,    h,    1.0f, 0.0f, /* Bottom right */
-        0.0f, h,    0.0f, 0.0f, /* Bottom left */
-        0.0f, 0.0f, 0.0f, 1.0f  /* Top left */
-    };
+    float vertices[16];
+    int rotation = 0;
+    build_vertices(w, h, rotation, vertices);
     GLuint indices[] = {0, 1, 3, 1, 2, 3};
 
     glGenVertexArrays(1, &vao);
@@ -867,6 +879,24 @@ int main(int argc, char **argv) {
                             camera.delta_scale -= config.scroll_invert ? -config.scroll_speed : config.scroll_speed;
                             camera.scale_pivot = mouse.curr;
                         }
+                    } else if (key >= XK_1 && key <= XK_5) {
+                        float targets[] = {1.0f, 2.0f, 4.0f, 8.0f, 16.0f};
+                        float target = targets[key - XK_1];
+                        if (config.smooth_reset) {
+                            camera.anim_start_pos = camera.position;
+                            camera.anim_start_scale = camera.scale;
+                            camera.anim_end_pos = vec2(0.0f, 0.0f);
+                            camera.anim_end_scale = target;
+                            camera.anim_t = 0.0f;
+                            camera.animating = 1;
+                            camera.velocity = vec2(0.0f, 0.0f);
+                            camera.delta_scale = 0.0;
+                        } else {
+                            camera.scale = target;
+                            camera.delta_scale = 0.0;
+                            camera.position = vec2(0.0f, 0.0f);
+                            camera.velocity = vec2(0.0f, 0.0f);
+                        }
                     } else if (key == XK_0) {
                         if (config.smooth_reset) {
                             camera.anim_start_pos = camera.position;
@@ -965,6 +995,16 @@ int main(int argc, char **argv) {
                         }
                     } else if (key == XK_s) {
                         save_view = 1;
+                    } else if (ctrl && key == XK_bracketleft) {
+                        rotation = (rotation + 3) % 4;
+                        build_vertices(w, h, rotation, vertices);
+                        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+                    } else if (ctrl && key == XK_bracketright) {
+                        rotation = (rotation + 1) % 4;
+                        build_vertices(w, h, rotation, vertices);
+                        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
                     }
                     break;
                 }
@@ -1008,9 +1048,30 @@ int main(int argc, char **argv) {
              mouse, flashlight, mirror, elapsed);
         elapsed += dt;
 
+        int color_r = 0, color_g = 0, color_b = 0, color_valid = 0;
+        {
+            Vec2f ss = screen_to_screenshot(mouse.curr,
+                vec2((float)wa.width, (float)wa.height),
+                vec2((float)screenshot.image->width, (float)screenshot.image->height),
+                camera);
+            int sx = (int)ss.x;
+            int sy = (int)ss.y;
+            if (sx >= 0 && sx < screenshot.image->width &&
+                sy >= 0 && sy < screenshot.image->height) {
+                int bpp = screenshot.image->bits_per_pixel / 8;
+                int offset = sy * screenshot.image->bytes_per_line + sx * bpp;
+                unsigned char *data = (unsigned char *)screenshot.image->data;
+                color_b = data[offset + 0];
+                color_g = data[offset + 1];
+                color_r = data[offset + 2];
+                color_valid = 1;
+            }
+        }
+
         if (osd_enabled) {
             float zoom = camera.scale * 100.0f;
-            osd_render(shader_names[current_shader], zoom, fps, vec2((float)wa.width, (float)wa.height));
+            osd_render(shader_names[current_shader], zoom, fps, vec2((float)wa.width, (float)wa.height),
+                       color_r, color_g, color_b, color_valid);
         }
 
         if (save_view) {
@@ -1038,12 +1099,8 @@ int main(int argc, char **argv) {
         {
             float nw = (float)screenshot.image->width;
             float nh = (float)screenshot.image->height;
-            float new_vertices[] = {
-                nw,   0.0f, 1.0f, 1.0f,
-                nw,   nh,   1.0f, 0.0f,
-                0.0f, nh,   0.0f, 0.0f,
-                0.0f, 0.0f, 0.0f, 1.0f
-            };
+            float new_vertices[16];
+            build_vertices(nw, nh, rotation, new_vertices);
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(new_vertices), new_vertices, GL_STATIC_DRAW);
             gl_check_error("LIVE vertex buffer upload");

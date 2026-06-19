@@ -29,6 +29,7 @@ typedef struct {
 } Camera;
 
 Vec2f world(Camera camera, Vec2f v);
+Vec2f screen_to_screenshot(Vec2f screen_pos, Vec2f window_size, Vec2f screenshot_size, Camera camera);
 void camera_update(Camera *camera, Config config, float dt, Mouse mouse, XImage *image, Vec2f window_size);
 
 #endif // NAVIGATION_H_
