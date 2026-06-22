@@ -201,9 +201,9 @@ See [`editors/README.md`](editors/README.md) for install instructions.
 
 Syntax highlighting for the config file is available for **Vim** (`editors/vim/cboomer.vim`) and **Emacs** (`editors/emacs/cboomer-mode.el`). Both highlight keys, strings, numbers, booleans, and comments.
 
-## Credits
+## Referances
 
-- Original [Nim implementation](https://github.com/tsoding/boomer) by [Tsoding](https://twitch.tv/tsoding)
+- Original [Nim implementation](https://github.com/tsoding/boomer) by [Tsoding](https://twitch.tv/tsoding), [Livestream(s)](https://www.twitch.tv/collections/HlRy-q69uBXmpQ)
 - X11/GLX reference: [Programming OpenGL in Linux](https://www.khronos.org/opengl/wiki/Programming_OpenGL_in_Linux:_GLX_and_Xlib)
 - [stb single-file public domain libraries](https://github.com/nothings/stb)
 - [Edge Detection Shaders](https://www.flyriver.com/g/edge-detection-shaders?auth=1781341835102)
@@ -214,6 +214,7 @@ Syntax highlighting for the config file is available for **Vim** (`editors/vim/c
 - <https://www.python.org>
 - <https://ninja-build.org/manual.html>
 - <https://netpbm.sourceforge.net/doc/ppm.html>
+- <https://www.x.org/releases/X11R7.7/doc/xextproto/shm.html>
 
 ## License
 

@@ -44,6 +44,9 @@ case "${distro,,}" in
     opensuse*|suse*)
         zypper install -y gcc make libX11-devel libXrandr-devel libXext-devel Mesa-libGL-devel
         ;;
+    void)
+        xbps-install -S base-devel libX11-devel libXrandr-devel libXext-devel mesa-dri
+        ;;
     *)
         echo "Unsupported distro: $distro"
         echo "Please install build-essential (or equivalent), libx11-dev, libxrandr-dev, libxext-dev, and libgl-dev manually."
