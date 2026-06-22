@@ -1,4 +1,4 @@
-# cboomer
+# cboomer [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/DavidBalishyan/cboomer)
 
 Zoomer application for Linux - a fullscreen screenshot viewer with pan, zoom, flashlight effects, and live window tracking.
 
