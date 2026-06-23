@@ -34,6 +34,7 @@
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("/cboomer/config\\'" . cboomer-mode))
+(add-to-list 'auto-mode-alist '("*.boom\\'" . cboomer-mode))
 
 (provide 'cboomer-mode)
 ;;; cboomer-mode.el ends here
