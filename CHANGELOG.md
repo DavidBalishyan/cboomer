@@ -132,4 +132,4 @@ commit: [3f498b7](https://github.com/DavidBalishyan/cboomer/commit/3f498b7682a90
 
 - **Texture filtering toggle** - press `i` to switch between `GL_NEAREST` (pixel-perfect, default) and `GL_LINEAR` (bilinear interpolation) for the `GL_TEXTURE_MAG_FILTER`. When zoomed in close, linear filtering smooths the image instead of showing hard pixel blocks. Current state shown on the OSD when enabled.
 
-commit: [TODO]
+commit: [2e2beff](https://github.com/DavidBalishyan/cboomer/commit/2e2beff1d3fe16f419fbcc2bb372fd2b11910954)
