@@ -7,7 +7,8 @@
 
 int osd_init(const char *font_path);
 void osd_render(const char *shader_name, float zoom, float fps, Vec2f window_size,
-                int color_r, int color_g, int color_b, int color_valid);
+                int color_r, int color_g, int color_b, int color_valid,
+                const char *filter_name);
 void osd_cleanup(void);
 
 #endif // OSD_H_

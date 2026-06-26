@@ -277,10 +277,11 @@ int osd_init(const char *font_path) {
 #define OSD_MAX_CHARS 384
 
 void osd_render(const char *shader_name, float zoom, float fps, Vec2f window_size,
-                int color_r, int color_g, int color_b, int color_valid) {
+                int color_r, int color_g, int color_b, int color_valid,
+                const char *filter_name) {
     if (!osd_program) return;
 
-    char lines[4][64];
+    char lines[5][64];
     int nlines = 0;
     if (shader_name) {
         snprintf(lines[nlines], sizeof(lines[nlines]), "Shader: %s", shader_name);
@@ -293,6 +294,10 @@ void osd_render(const char *shader_name, float zoom, float fps, Vec2f window_siz
     if (color_valid) {
         snprintf(lines[nlines], sizeof(lines[nlines]), "Color: rgb(%d, %d, %d) #%02X%02X%02X",
                  color_r, color_g, color_b, color_r, color_g, color_b);
+        nlines++;
+    }
+    if (filter_name) {
+        snprintf(lines[nlines], sizeof(lines[nlines]), "Filter: %s", filter_name);
         nlines++;
     }
 

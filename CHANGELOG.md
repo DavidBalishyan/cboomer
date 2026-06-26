@@ -127,3 +127,9 @@ commit: [8c27209](https://github.com/DavidBalishyan/cboomer/commit/8c2720968b690
 - **Rotation** - press `Ctrl+[` to rotate 90 degrees counter-clockwise, `Ctrl+]` to rotate 90 degrees clockwise. Cycles through 0/90/180/270 degrees. Works by remapping texture coordinates per-vertex and re-uploading the VBO.
 
 commit: [3f498b7](https://github.com/DavidBalishyan/cboomer/commit/3f498b7682a90811fd46987279fa63dd4efff26c)
+
+# v1.5.0
+
+- **Texture filtering toggle** - press `i` to switch between `GL_NEAREST` (pixel-perfect, default) and `GL_LINEAR` (bilinear interpolation) for the `GL_TEXTURE_MAG_FILTER`. When zoomed in close, linear filtering smooths the image instead of showing hard pixel blocks. Current state shown on the OSD when enabled.
+
+commit: [TODO]

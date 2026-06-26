@@ -84,6 +84,7 @@ Same feature flags as `make`. The primary build system is still Make; **this is 
 | `1` `2` `3` `4` `5` | Zoom presets: 100%, 200%, 400%, 800%, 1600% (smooth when `smooth_reset` is enabled) |
 | `←` `→` `↑` `↓` / `h` `j` `k` `l` | Pan image |
 | `Ctrl`+`f`/`b`/`n`/`p` | Pan image (small step, Emacs-style) |
+| `i` | Toggle texture filtering: Nearest (pixel-perfect) <-> Linear (smooth) |
 | `o` | Toggle on-screen display (shader, zoom, FPS, color under cursor) |
 | `q` / `Esc` | Quit |
 | `r` | Reload configuration file |
@@ -96,19 +97,9 @@ Same feature flags as `make`. The primary build system is still Make; **this is 
 | `Ctrl` + `r` | Reload shaders from disk (developer build only) |
 
 ## Command-Line Options
-
-```
-cboomer  -  fullscreen screenshot viewer
-
-Usage:  cboomer [OPTIONS]
-
-Options:
-  -d, --delay <seconds>    delay execution by <seconds>
-  -h, --help               show this help and exit
-      --new-config [path]  generate a default config at [path]
-  -c, --config <path>      use config at <path>
-  -V, --version            show version and exit
-  -w, --windowed           windowed mode instead of fullscreen
+After installing, run: 
+```console
+$ cboomer --help
 ```
 
 ## Configuration
@@ -122,14 +113,8 @@ $ cboomer --new-config
 Format:
 
 ```
-min_scale = 0.01
-scroll_speed = 1.50
-drag_friction = 6.00
-scale_friction = 4.00
-ppm_save_path = "$HOME/.config/cboomer/screenshot.ppm"
-ppm_save = false
+key = "value" # or values can have different types
 ```
-
 Values are typed by their literal form:
 
 | Example | Type |
@@ -217,6 +202,7 @@ Syntax highlighting for the config file is available for **Vim** (`editors/vim/c
 - <https://ninja-build.org/manual.html>
 - <https://netpbm.sourceforge.net/doc/ppm.html>
 - <https://www.x.org/releases/X11R7.7/doc/xextproto/shm.html>
+- <https://pcpartsgeek.com/bilinear-filtering>
 
 ## License
 

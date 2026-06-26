@@ -728,6 +728,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < SHADER_COUNT; i++) {
         programs[i] = new_shader_program(vertex_shader, fragment_shaders[i]);
     }
+
 #ifdef DEVELOPER
     vertex_shader.content = NULL;
     for (int i = 0; i < SHADER_COUNT; i++) {
@@ -818,6 +819,7 @@ int main(int argc, char **argv) {
     Flashlight flashlight = { .is_enabled = 0, .radius = config.flashlight_radius, .shadow = 0.0f, .delta_radius = 0.0f };
     int mirror = config.mirror;
     int save_view = 0;
+    int filter_mode = 0;
     float elapsed = 0.0f;
     float fps = (float)rate;
 
@@ -1005,6 +1007,11 @@ int main(int argc, char **argv) {
                         build_vertices(w, h, rotation, vertices);
                         glBindBuffer(GL_ARRAY_BUFFER, vbo);
                         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+                    } else if (key == XK_i) {
+                        filter_mode = !filter_mode;
+                        glBindTexture(GL_TEXTURE_2D, texture);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mode ? GL_LINEAR : GL_NEAREST);
+                        printf("Filter: %s\n", filter_mode ? "Linear" : "Nearest");
                     }
                     break;
                 }
@@ -1071,7 +1078,7 @@ int main(int argc, char **argv) {
         if (osd_enabled) {
             float zoom = camera.scale * 100.0f;
             osd_render(shader_names[current_shader], zoom, fps, vec2((float)wa.width, (float)wa.height),
-                       color_r, color_g, color_b, color_valid);
+                       color_r, color_g, color_b, color_valid, filter_mode ? "Linear" : "Nearest");
         }
 
         if (save_view) {

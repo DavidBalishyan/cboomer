@@ -1,6 +1,7 @@
 # TODO
 
 ## Done
+
 - [x] crash on shader hot-reload free() on embedded string constant
 - [x] LIVE mode rendering is garbled vertex layout mismatch (5 floats vs stride of 4)
 - [x] heap overflow in reload_shader when ftell fails (returns -1 then cast to size_t)
@@ -42,8 +43,6 @@
 - [x] make --windowed mode remember window position between runs
 - [x] add screenshot_format config option for PNG saves
 - [x] keyboard panning with arrows, vi keys (h/j/k/l), emacs keys (C-f/b/n/p)
-
-## Done (v1.4.2)
 - [x] color picker on OSD - RGB + hex under cursor
 - [x] zoom presets (keys 1-5: 100%, 200%, 400%, 800%, 1600%)
 - [x] rotation (Ctrl+[/]: CCW/CW 90 degrees)

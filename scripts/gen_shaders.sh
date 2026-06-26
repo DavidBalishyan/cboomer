@@ -38,7 +38,8 @@ FRAG_NAMES="frag_invert frag_crt frag_grayscale frag_edge frag_vhsglitch frag_di
 
     printf 'static const char OSD_FRAG_SRC[] = "'
     awk '{printf "%s\\n", $0}' src/shaders/osd_frag.glsl
-    printf '";\n\n'
+    printf '";\n'
+    printf '\n'
 
     printf '#endif // SHADERS_H_\n'
 } > "$OUT"
