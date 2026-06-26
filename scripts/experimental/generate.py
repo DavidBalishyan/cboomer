@@ -5,7 +5,6 @@ import argparse
 import subprocess
 
 FRAG_NAMES = [
-    'frag_NEW_SHADER',
     'frag_invert', 'frag_crt', 'frag_grayscale', 'frag_edge',
     'frag_vhsglitch', 'frag_distortion', 'frag_zoomblur',
     'frag_posterize', 'frag_pixelate', 'frag_sepia', 'frag_emboss',
