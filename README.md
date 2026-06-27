@@ -203,6 +203,8 @@ Syntax highlighting for the config file is available for **Vim** (`editors/vim/c
 - <https://netpbm.sourceforge.net/doc/ppm.html>
 - <https://www.x.org/releases/X11R7.7/doc/xextproto/shm.html>
 - <https://pcpartsgeek.com/bilinear-filtering>
+- <https://www.geeksforgeeks.org/data-science/manhattan-distance>
+- <https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexParameter.xhtml>
 
 ## License
 
