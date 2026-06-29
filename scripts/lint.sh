@@ -10,7 +10,7 @@ if [ "${1:-}" = "help" ]; then
     exit 0
 fi
 
-SRC="src/main.c src/la.c src/config.c src/navigation.c src/screenshot.c"
+SRC="src/main.c src/la.c src/config.c src/navigation.c src/screenshot.c src/osd.c"
 
 if command -v cppcheck >/dev/null 2>&1; then
     exec cppcheck --enable=all --suppress=missingIncludeSystem \
