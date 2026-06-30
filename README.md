@@ -10,11 +10,23 @@ Originally written in [Nim](https://github.com/nim-lang/Nim), this is a C11 rewr
 
 ## Dependencies
 
-Install build dependencies:
+Install build dependencies (pick one):
+
+**Option 1 - install-deps script**:
 
 ```console
 $ ./scripts/install-deps.sh
 ```
+
+**Option 2(recommended) - [envforge](https://github.com/DavidBalishyan/envforge)** (also manages env vars, build commands, and cleanup):
+
+```console
+$ envforge enter cboomer
+```
+
+[envforge](https://github.com/DavidBalishyan/envforge) reads the
+`.envforge.yaml` in this repo: it installs the same packages, sets `CC` and
+`CFLAGS`, runs `make`, and removes the packages when you exit the subshell.
 
 
 ## Quick Start

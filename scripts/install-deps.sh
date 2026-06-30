@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+## There is an .envforge.yaml in the repo root, if you can use it (https://github.com/DavidBalishyan/envforge)
+## It's recommended to use envforge instead of this script
 set -euo pipefail
 
 if [ "${1:-}" = "help" ]; then
