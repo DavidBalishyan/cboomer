@@ -16,5 +16,9 @@ env:
   CFLAGS: "-Wall -Wextra -pedantic -std=c11 -O2 -g"
 
 setup:
-  - make -C /home/david/development/c/cboomer
+  - make -C $(pwd)
   - echo "\033[32mSetup Complete!\033[0m"
+
+teardown:
+  - make -C $(pwd) clean
+  - echo "\033[32mTeardown Complete!\033[0m"
