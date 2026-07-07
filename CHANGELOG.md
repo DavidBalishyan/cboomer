@@ -146,4 +146,4 @@ commit: [2e2beff](https://github.com/DavidBalishyan/cboomer/commit/2e2beff1d3fe1
 - **Memory checking script** - `scripts/memcheck.sh` runs the unit tests under AddressSanitizer/UBSan and valgrind. Sanitized objects build to `build/asan` via a new `SANITIZE` Makefile hook so they never mix with normal objects; runs as its own CI job.
 - **zlib in dependency manifests** - zlib has been linked (`-lz`) since PNG support in v1.4.1 but was missing from `scripts/install-deps.sh` and `.envforge.yaml`; both now install it (`zlib1g-dev`/`zlib-devel`/`zlib`/`zlib-dev` per distro).
 
-commit: [TODO]
+commit: [e365a36](https://github.com/DavidBalishyan/cboomer/commit/e365a36de81cb89359451fbca6e136c00213b075)
