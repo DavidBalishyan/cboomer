@@ -9,8 +9,8 @@ if [ "${1:-}" = "help" ]; then
     echo "Install build dependencies for cboomer."
     echo ""
     echo "Detects the distro and installs the required packages"
-    echo "(build-essential, libx11-dev, libxrandr-dev, libxext-dev, libgl-dev"
-    echo "or equivalent) via the native package manager."
+    echo "(build-essential, libx11-dev, libxrandr-dev, libxext-dev, libgl-dev,"
+    echo "zlib1g-dev or equivalent) via the native package manager."
     echo ""
     echo "Supported distros: Debian, Ubuntu, Linux Mint, Pop!_OS, Fedora,"
     echo "RHEL, CentOS, Rocky Linux, AlmaLinux, Arch, Manjaro, EndeavourOS,"
@@ -33,26 +33,26 @@ fi
 case "${distro,,}" in
     debian|ubuntu|linuxmint|pop)
         apt-get update
-        apt-get install -y build-essential libx11-dev libxrandr-dev libxext-dev libgl-dev
+        apt-get install -y build-essential libx11-dev libxrandr-dev libxext-dev libgl-dev zlib1g-dev
         ;;
     fedora|rhel|centos|rocky|almalinux)
-        dnf install -y gcc make libX11-devel libXrandr-devel libXext-devel mesa-libGL-devel
+        dnf install -y gcc make libX11-devel libXrandr-devel libXext-devel mesa-libGL-devel zlib-devel
         ;;
     arch|manjaro|endeavouros)
-        pacman -S --needed base-devel libx11 libxrandr libxext mesa
+        pacman -S --needed base-devel libx11 libxrandr libxext mesa zlib
         ;;
     alpine)
-        apk add build-base libx11-dev libxrandr-dev libxext-dev mesa-dev
+        apk add build-base libx11-dev libxrandr-dev libxext-dev mesa-dev zlib-dev
         ;;
     opensuse*|suse*)
-        zypper install -y gcc make libX11-devel libXrandr-devel libXext-devel Mesa-libGL-devel
+        zypper install -y gcc make libX11-devel libXrandr-devel libXext-devel Mesa-libGL-devel zlib-devel
         ;;
     void)
-        xbps-install -S base-devel libX11-devel libXrandr-devel libXext-devel mesa-dri
+        xbps-install -S base-devel libX11-devel libXrandr-devel libXext-devel mesa-dri zlib-devel
         ;;
     *)
         echo "Unsupported distro: $distro"
-        echo "Please install build-essential (or equivalent), libx11-dev, libxrandr-dev, libxext-dev, and libgl-dev manually."
+        echo "Please install build-essential (or equivalent), libx11-dev, libxrandr-dev, libxext-dev, libgl-dev, and zlib1g-dev manually."
         exit 1
         ;;
 esac

@@ -82,8 +82,23 @@ Same feature flags as `make`. The primary build system is still Make; **this is 
 | `scripts/lint.sh` | Run static analysis via cppcheck or clang-tidy |
 | `scripts/release.sh` | Tag, push, and create a GitHub release from CHANGELOG |
 | `scripts/gen_shaders.sh` | Generate `build/shaders.h` from `.glsl` files (called by Makefile) |
+| `scripts/build-matrix.sh` | Build every variant combination to catch `#ifdef` breakage |
+| `scripts/memcheck.sh` | Run the unit tests under ASan/UBSan and valgrind |
 | `scripts/experimental/generate.pl` | Generate `build.ninja` (experimental, Perl) |
 | `scripts/experimental/generate.py` | Generate `build.ninja` (experimental, Python) |
+
+## Testing
+>[!NOTE]
+>See more at [tests/README.md](tests/README.md)
+
+```console
+$ make test
+```
+
+Builds and runs the unit tests in `tests/` (config parsing, vector math,
+camera physics, PPM/PNG encoding). The test binary never opens an X
+connection, so you don't need a display; the build dependencies above are
+enough.
 
 ## Controls
 

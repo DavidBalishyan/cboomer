@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxrandr-dev libxext-dev \
+            libgl1-mesa-dev zlib1g-dev
+      - name: Build
+        run: make
+      - name: Test
+        run: make test
+
+  variants:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxrandr-dev libxext-dev \
+            libgl1-mesa-dev zlib1g-dev
+      - name: Build all variant combinations
+        run: scripts/build-matrix.sh
+
+  memcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxrandr-dev libxext-dev \
+            libgl1-mesa-dev zlib1g-dev valgrind
+      - name: Tests under sanitizers and valgrind
+        run: scripts/memcheck.sh all

@@ -26,6 +26,21 @@ void err(const char *fmt, ...) {
     va_end(args);
 }
 
+const char *shader_names[SHADER_COUNT] = {
+    "Normal",
+    "Invert",
+    "CRT",
+    "Grayscale",
+    "Edge",
+    "VHS Glitch",
+    "Distortion",
+    "Zoom Blur",
+    "Posterize",
+    "Pixelate",
+    "Sepia",
+    "Emboss",
+};
+
 const Config DEFAULT_CONFIG = {
     .min_scale = 0.01,
     .scroll_speed = 1.5,

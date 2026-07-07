@@ -133,3 +133,17 @@ commit: [3f498b7](https://github.com/DavidBalishyan/cboomer/commit/3f498b7682a90
 - **Texture filtering toggle** - press `i` to switch between `GL_NEAREST` (pixel-perfect, default) and `GL_LINEAR` (bilinear interpolation) for the `GL_TEXTURE_MAG_FILTER`. When zoomed in close, linear filtering smooths the image instead of showing hard pixel blocks. Current state shown on the OSD when enabled.
 
 commit: [2e2beff](https://github.com/DavidBalishyan/cboomer/commit/2e2beff1d3fe16f419fbcc2bb372fd2b11910954)
+
+# v1.5.1
+
+- **Test harness** - new `tests/` directory with a homegrown, dependency-free runner (`tests/test.h`); 38 unit tests covering config parsing (`tests/test_config.c`), vec2 math (`tests/test_la.c`), camera physics (`tests/test_navigation.c`), and byte-exact PPM/PNG encoding with CRC and zlib roundtrip checks (`tests/test_screenshot.c`). Run with `make test`; no display needed. See `tests/README.md`.
+- **Colored test output** - test results print green `ok` / red `FAIL` when stdout is a terminal, plain when piped (same tty detection as config warnings).
+- **CI workflow** - `.github/workflows/ci.yml` builds the project and runs the tests on every push to main and every pull request.
+- **Moved `shader_names` to config.c** - the array was defined in `main.c` but declared and consumed in the config module; moving it lets test binaries link `config.o` without `main.o` (`src/config.c`, `src/main.c`).
+- **Test header dependency in Makefile** - test objects rebuild when `tests/test.h` changes (`Makefile`).
+- **Lint covers tests** - `scripts/lint.sh` now runs cppcheck/clang-tidy over `tests/*.c` too.
+- **Build-variant matrix script** - `scripts/build-matrix.sh` compiles all seven meaningful `dev`/`live`/`mitshm`/`select` combinations to catch breakage in `#ifdef`'d code paths that plain `make` never compiles; runs as its own CI job.
+- **Memory checking script** - `scripts/memcheck.sh` runs the unit tests under AddressSanitizer/UBSan and valgrind. Sanitized objects build to `build/asan` via a new `SANITIZE` Makefile hook so they never mix with normal objects; runs as its own CI job.
+- **zlib in dependency manifests** - zlib has been linked (`-lz`) since PNG support in v1.4.1 but was missing from `scripts/install-deps.sh` and `.envforge.yaml`; both now install it (`zlib1g-dev`/`zlib-devel`/`zlib`/`zlib-dev` per distro).
+
+commit: [TODO]

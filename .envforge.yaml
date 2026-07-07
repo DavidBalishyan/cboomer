@@ -6,6 +6,7 @@ packages:
   - libxrandr-dev
   - libxext-dev
   - libgl-dev
+  - zlib1g-dev
   - cppcheck
   - ninja-build
   - perl

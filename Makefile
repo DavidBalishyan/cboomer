@@ -11,6 +11,11 @@ BIN := $(CURDIR)/cboomer
 GIT_HASH := $(shell git rev-parse HEAD 2>/dev/null || echo unknown)
 CFLAGS += -DGIT_HASH=\"$(GIT_HASH)\" -I$(BUILD)
 
+# Sanitizer hook: scripts/memcheck.sh passes SANITIZE and a separate BUILD
+# dir so instrumented objects never mix with normal ones
+SANITIZE ?=
+CFLAGS += $(SANITIZE)
+
 ifneq ($(filter dev,$(MAKECMDGOALS)),)
 CFLAGS += -DDEVELOPER
 endif
@@ -25,7 +30,7 @@ CFLAGS += -DSELECT
 endif
 
 .DELETE_ON_ERROR:
-.PHONY: all clean dev live mitshm select install uninstall reinstall help
+.PHONY: all clean dev live mitshm select install uninstall reinstall help test
 
 all: $(BIN)
 
@@ -50,6 +55,27 @@ $(BIN): $(OBJ)
 
 dev live mitshm select: $(BIN)
 
+TEST_SRC := tests/test_main.c tests/test_la.c tests/test_config.c \
+            tests/test_navigation.c tests/test_screenshot.c
+TEST_OBJ := $(TEST_SRC:tests/%.c=$(BUILD)/tests/%.o)
+TEST_DEPS := $(BUILD)/la.o $(BUILD)/config.o $(BUILD)/navigation.o $(BUILD)/screenshot.o
+TEST_BIN := $(BUILD)/run_tests
+# -lX11 only resolves symbols referenced by untested capture functions in
+# screenshot.o; the test binary never opens a display.
+TEST_LDLIBS := -lX11 -lm -lz
+
+$(BUILD)/tests:
+	mkdir -p $(BUILD)/tests
+
+$(BUILD)/tests/%.o: tests/%.c tests/test.h Makefile | $(BUILD)/tests
+	$(CC) $(CFLAGS) -Isrc -c -o $@ $<
+
+$(TEST_BIN): $(TEST_OBJ) $(TEST_DEPS)
+	$(CC) $(CFLAGS) -o $@ $^ $(TEST_LDLIBS)
+
+test: $(TEST_BIN)
+	$(TEST_BIN)
+
 install: $(BIN)
 	install -d $(DESTDIR)$(PREFIX)/bin
 	install -m 755 cboomer $(DESTDIR)$(PREFIX)/bin/cboomer
@@ -71,6 +97,7 @@ help:
 	@echo "  install    Install cboomer to \$$(PREFIX)/bin"
 	@echo "  uninstall  Remove cboomer from \$$(PREFIX)/bin"
 	@echo "  reinstall  Uninstall then install"
+	@echo "  test       Build and run the unit tests"
 	@echo "  clean      Remove build artifacts"
 	@echo "  help       Show this message"
 	@echo ""

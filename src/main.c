@@ -37,21 +37,6 @@ typedef struct {
     const char *content;
 } Shader;
 
-const char *shader_names[SHADER_COUNT] = {
-    "Normal",
-    "Invert",
-    "CRT",
-    "Grayscale",
-    "Edge",
-    "VHS Glitch",
-    "Distortion",
-    "Zoom Blur",
-    "Posterize",
-    "Pixelate",
-    "Sepia",
-    "Emboss",
-};
-
 static Shader vertex_shader = { .path = "(embedded)", .content = VERT_SRC };
 static Shader fragment_shaders[SHADER_COUNT] = {
     { .path = "(embedded)", .content = FRAG_SRC },

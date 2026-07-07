@@ -2,7 +2,7 @@
 
 These scripts generate a `build.ninja` file so you can build cboomer with [Ninja](https://ninja-build.org/) instead of `make`.
 
-You get two implementations that produce the same output: one in **Perl** (`generate.pl`) and one in **Python 3** (`generate.py`). Pick whichever you have installed.
+You get two implementations that produce the same output: one in Perl (`generate.pl`) and one in Python 3 (`generate.py`). Pick whichever you have installed.
 
 ## Usage
 
@@ -20,7 +20,7 @@ Run the generator from the project root (that's where `build.ninja` should end u
 
 ## How it works
 
-Both scripts do one thing: **print a `build.ninja` file** with the right variables baked in. They don't contain any build logic themselves. That's all Ninja's job.
+Both scripts do one thing: print a `build.ninja` file with the right variables baked in. They don't contain any build logic themselves. That's all Ninja's job.
 
 ### 1. Parse flags
 
@@ -71,7 +71,7 @@ Ninja deliberately has no conditional logic, no shell expansion, and no file-glo
 
 This is the same pattern Meson, CMake, and GN use. They all generate `build.ninja` as an intermediate step.
 
-## Key differences from `make`
+## Differences from `make`
 
 | Aspect | `make` | `ninja` |
 |--------|--------|---------|
