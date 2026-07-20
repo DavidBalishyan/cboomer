@@ -147,3 +147,11 @@ commit: [2e2beff](https://github.com/DavidBalishyan/cboomer/commit/2e2beff1d3fe1
 - **zlib in dependency manifests** - zlib has been linked (`-lz`) since PNG support in v1.4.1 but was missing from `scripts/install-deps.sh` and `.envforge.yaml`; both now install it (`zlib1g-dev`/`zlib-devel`/`zlib`/`zlib-dev` per distro).
 
 commit: [e365a36](https://github.com/DavidBalishyan/cboomer/commit/e365a36de81cb89359451fbca6e136c00213b075)
+
+# v1.5.2
+
+- **Implemented issue [#2](https://github.com/DavidBalishyan/cboomer/issues/2)** - `find_font` corrupts the directory path mid-scan 
+- **Implemented issue [#4](https://github.com/DavidBalishyan/cboomer/issues/4)** - `ppm_save_path` leaked on every config reload
+- **Implemented issue [#3](https://github.com/DavidBalishyan/cboomer/issues/3)** - Division by zero if refresh rate is 0
+
+commit: [TODO]

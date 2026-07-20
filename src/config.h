@@ -48,6 +48,7 @@ typedef struct {
 extern const Config DEFAULT_CONFIG;
 
 Config load_config(const char *file_path);
+void free_config(Config *config);
 void generate_default_config(const char *file_path);
 
 #endif // CONFIG_H_

@@ -599,6 +599,7 @@ int main(int argc, char **argv) {
         FILE *check = fopen(config_file, "r");
         if (check) {
             fclose(check);
+            free_config(&config);
             config = load_config(config_file);
         } else {
             warn("%s doesn't exist. Using default values.\n", config_file);
@@ -634,10 +635,14 @@ int main(int argc, char **argv) {
     Window tracking_window = DefaultRootWindow(display);
 #endif
 
+    int rate = 60;
     XRRScreenConfiguration *screen_config = XRRGetScreenInfo(display, DefaultRootWindow(display));
-    int rate = XRRConfigCurrentRate(screen_config);
+    if (screen_config) {
+        rate = XRRConfigCurrentRate(screen_config);
+        if (rate <= 0) rate = 60;
+        XRRFreeScreenConfigInfo(screen_config);
+    }
     printf("Screen rate: %d\n", rate);
-    XRRFreeScreenConfigInfo(screen_config);
 
     int screen = DefaultScreen(display);
     int glx_major, glx_minor;
@@ -907,6 +912,7 @@ int main(int argc, char **argv) {
                         FILE *check = fopen(config_file, "r");
                         if (check) {
                             fclose(check);
+                            free_config(&config);
                             config = load_config(config_file);
                             current_shader = config.default_shader;
                             mirror = config.mirror;
@@ -1126,6 +1132,7 @@ int main(int argc, char **argv) {
     glXDestroyContext(display, glc);
     XDestroyWindow(display, win);
     XCloseDisplay(display);
+    free_config(&config);
 
     return 0;
 }

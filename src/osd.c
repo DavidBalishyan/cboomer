@@ -148,7 +148,8 @@ static int find_font(const char *name, char *out, size_t out_sz) {
 
     while (top > 0) {
         top--;
-        char *dir = stack[top];
+        char dir[1024];
+        snprintf(dir, sizeof(dir), "%s", stack[top]);
 
         DIR *d = opendir(dir);
         if (!d) continue;

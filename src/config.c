@@ -224,6 +224,13 @@ Config load_config(const char *file_path) {
     return config;
 }
 
+void free_config(Config *config) {
+    if (config->ppm_save_path != DEFAULT_CONFIG.ppm_save_path) {
+        free(config->ppm_save_path);
+        config->ppm_save_path = NULL;
+    }
+}
+
 void generate_default_config(const char *file_path) {
     FILE *f = fopen(file_path, "w");
     if (!f) {
