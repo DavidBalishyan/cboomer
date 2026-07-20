@@ -22,6 +22,16 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan codeberg.org >> ~/.ssh/known_hosts
 
+      - name: Patch files for Codeberg
+        run: |
+          sed -i '/^>\[!NOTE\]$/,/^$/d' README.md
+          sed -i 's|https://github.com/DavidBalishyan/envforge|https://codeberg.org/DavidBalishyan/envforge|g' README.md scripts/install-deps.sh
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md scripts/install-deps.sh
+          git diff --cached --quiet || git commit -m "ci: patch files for Codeberg mirror"
+          git push origin main
+
       - name: Mirror push to Codeberg
         run: |
           git remote add codeberg git@codeberg.org:DavidBalishyan/cboomer.git
