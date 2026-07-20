@@ -25,15 +25,6 @@ static const char *write_tmp_config(const char *contents) {
     return tmp_path;
 }
 
-/* ppm_save_path is a string literal in DEFAULT_CONFIG but heap-allocated
- * once set or expanded, so it may only be freed conditionally. */
-static void free_config(Config *config) {
-    if (config->ppm_save_path != DEFAULT_CONFIG.ppm_save_path) {
-        free(config->ppm_save_path);
-        config->ppm_save_path = NULL;
-    }
-}
-
 static void cleanup(Config *config) {
     unlink(tmp_path);
     free_config(config);
