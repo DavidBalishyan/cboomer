@@ -6,7 +6,7 @@ Zoomer application for Linux - a fullscreen screenshot viewer with pan, zoom, fl
 
 Originally written in [Nim](https://github.com/nim-lang/Nim), this is a C11 rewrite using X11 and OpenGL.
 
-[Watch the demo here](https://drive.google.com/file/d/1IT6zDoXzUNzzqA24JMwDpWog-PqxL2lA/view?usp=sharing)
+[Watch the demo here](https://mega.nz/file/nq4HSBoK#qp-FGWQrytO1ccjn25z4TjMenMdqzSZIrt-hiE6uy1U)
 
 ## Dependencies
 
