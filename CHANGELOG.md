@@ -154,4 +154,4 @@ commit: [e365a36](https://github.com/DavidBalishyan/cboomer/commit/e365a36de81cb
 - **Implemented issue [#4](https://github.com/DavidBalishyan/cboomer/issues/4)** - `ppm_save_path` leaked on every config reload
 - **Implemented issue [#3](https://github.com/DavidBalishyan/cboomer/issues/3)** - Division by zero if refresh rate is 0
 
-commit: [TODO]
+commit: [d49c4a9](https://github.com/DavidBalishyan/cboomer/commit/d49c4a9bbcd687a830d6b8e340d5a241ee73d4fc)
